@@ -7,7 +7,7 @@
 - [ ] Ejemplo...
 
 ## Frontend
-- [ ] Ejemplo...
+- [ ] Realizar Mockup's iniciales
 
 ## General
-- [ ] Ejemplo...
+- [ ] Formalizar Requerimientos Funcionales
