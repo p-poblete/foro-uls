@@ -1,0 +1,13 @@
+# To-Do
+
+## Base de Datos
+- [ ] Ejemplo...
+
+## Backend
+- [ ] Ejemplo...
+
+## Frontend
+- [ ] Ejemplo...
+
+## General
+- [ ] Ejemplo...
