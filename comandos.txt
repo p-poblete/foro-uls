@@ -1,0 +1,9 @@
+ 
+ source /Users/eliasefrainmanchegonavarro/Documents/foro-uls/.venv/bin/activate
+
+// dependencias si no las tienes
+ pip install -r backend/requirements.txt
+//
+// inciiar server
+cd backend
+/Users/eliasefrainmanchegonavarro/Documents/foro-uls/.venv/bin/python app.py

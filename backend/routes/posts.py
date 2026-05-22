@@ -1,8 +1,20 @@
 from flask import Blueprint, request, jsonify
 from models import Post, PostVote, Community, User, db
 from datetime import datetime, timezone
+import boto3
+import os
+from botocore.exceptions import BotoCoreError, ClientError
 
 posts_bp = Blueprint("posts", __name__)
+
+
+def _get_s3_client():
+    return boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        region_name=os.getenv("AWS_S3_REGION"),
+    )
 
 
 # list posts of a community
@@ -33,7 +45,9 @@ def get_post(post_id):
 # create a new post
 @posts_bp.route("/posts", methods=["POST"])
 def create_post():
-    data = request.get_json()
+    data = request.get_json(silent=True) if request.is_json else request.form.to_dict()
+    file = request.files.get("image")
+
     if not data or not data.get("community_id") or not data.get("author_id") or not data.get("title"):
         return jsonify({"error": "community_id, author_id y title son obligatorios"}), 400
 
@@ -45,12 +59,37 @@ def create_post():
     if not author:
         return jsonify({"error": "Usuario autor no encontrado"}), 404
 
+    image_url = None
+    if file:
+        access_key = os.getenv("AWS_ACCESS_KEY_ID")
+        secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        bucket_name = os.getenv("AWS_S3_BUCKET")
+        region = os.getenv("AWS_S3_REGION")
+
+        if not access_key or not secret_key or not bucket_name or not region:
+            return jsonify({"error": "Falta configurar credenciales/region/bucket de AWS S3"}), 400
+
+        if access_key.startswith("tu_") or secret_key.startswith("tu_") or bucket_name.startswith("tu_"):
+            return jsonify({"error": "Credenciales de AWS inválidas en .env (valores de ejemplo)"}), 400
+
+        safe_name = os.path.basename(file.filename or "image")
+        file_key = f"posts/{int(datetime.now(timezone.utc).timestamp())}_{safe_name}"
+
+        try:
+            s3_client = _get_s3_client()
+            s3_client.upload_fileobj(file, bucket_name, file_key)
+            image_url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{file_key}"
+        except (ClientError, BotoCoreError) as exc:
+            err = getattr(exc, "response", {}).get("Error", {}).get("Code", "S3Error")
+            return jsonify({"error": "Error subiendo imagen a S3", "detail": err}), 502
+
     post = Post(
         community_id=data["community_id"],
         author_id=data["author_id"],
         title=data["title"],
         content=data.get("content"),
-        post_type=data.get("post_type", "text"),
+        post_type=data.get("post_type", "image" if image_url else "text"),
+        image_url=image_url
     )
     db.session.add(post)
     db.session.commit()

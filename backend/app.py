@@ -9,7 +9,8 @@ from routes.communities import communities_bp
 from routes.posts import posts_bp
 from routes.comments import comments_bp
 
-load_dotenv()
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"), override=True)
 
 
 def create_app():

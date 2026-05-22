@@ -71,6 +71,7 @@ class Post(db.Model):
     author_id    = db.Column(db.Integer, db.ForeignKey("users.id",       ondelete="SET NULL"))
     title        = db.Column(db.String(300), nullable=False)
     content      = db.Column(db.Text)
+    image_url    = db.Column(db.Text)
     post_type    = db.Column(db.String(20),  nullable=False, default="text")
     vote_score   = db.Column(db.Integer,     nullable=False, default=0)
     status       = db.Column(db.String(20),  nullable=False, default="active")
@@ -85,6 +86,7 @@ class Post(db.Model):
             "author_id":    self.author_id,
             "title":        self.title,
             "content":      self.content,
+            "image_url":    self.image_url,
             "post_type":    self.post_type,
             "vote_score":   self.vote_score,
             "status":       self.status,
