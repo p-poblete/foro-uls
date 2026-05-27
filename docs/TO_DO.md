@@ -14,3 +14,6 @@
 
 ## General
 - [X] Formalizar Requerimientos Funcionales
+- [ ] Completar README principal
+- [ ] Subir documentos formales
+- [ ] Centralizar avances en la rama main
