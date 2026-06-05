@@ -1,0 +1,60 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build / output
+dist/
+dist-ssr/
+build/
+.output/
+.vinxi/
+.nitro/
+.tanstack/
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+*.local
+.dev.vars
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# Caché y herramientas
+.cache/
+.turbo/
+.eslintcache
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Cobertura de tests
+coverage/
+*.lcov
+.nyc_output/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editores
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.suo
+.ntvs
+*.njsproj
+*.sln
+*.sw?
+*.swp
