@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recuperación de Clases - Semana 1</title>
+    <style>
+        :root {
+            --primary-color: #2b4c7e;
+            --primary-dark: #1a3358;
+            --secondary-color: #64748b;
+            --success-color: #1f8f4d;
+            --success-dark: #17653a;
+            --text-color: #333333;
+            --muted-color: #5f6b7a;
+            --bg-quote: #fdfbf7;
+            --border-quote: #dcd6cd;
+            --border-input: #b3c6dd;
+            --bg-page: #f4f6f9;
+            --bg-soft: #f0f4f8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-page);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 850px;
+            background-color: #ffffff;
+            margin: 0 auto;
+            padding: 40px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .course-progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #eef4fb, #f9fbfd);
+            border: 1px solid #d8e3ef;
+            border-radius: 4px;
+            color: var(--primary-color);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .header-fields {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .field-group {
+            flex: 1;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .field-group label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+
+        .field-group .line {
+            flex: 1;
+            border-bottom: 1px solid #777;
+            padding-bottom: 5px;
+            font-style: italic;
+        }
+
+        .badge-semana {
+            background-color: #e2e8f0;
+            color: var(--primary-color);
+            padding: 4px 12px;
+            font-weight: bold;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .title-section {
+            text-align: center;
+            margin-bottom: 35px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #666;
+            margin: 0;
+        }
+
+        .main-title {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin: 5px 0 0 0;
+            font-weight: 700;
+        }
+
+        .topic-header {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            padding: 8px 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-top: 40px;
+            border-radius: 2px;
+        }
+
+        .topic-subheader {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-top: 25px;
+            border-bottom: 1px dashed var(--border-input);
+            padding-bottom: 5px;
+        }
+
+        .quote-box {
+            background-color: var(--bg-quote);
+            border: 1px solid var(--border-quote);
+            border-left: 5px solid var(--primary-color);
+            padding: 20px;
+            margin: 20px 0;
+            font-size: 0.95rem;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .quote-author {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .quote-source {
+            font-style: italic;
+            color: #555;
+            display: block;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .question-block {
+            margin: 25px 0;
+        }
+
+        .question-text {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #222;
+        }
+
+        .answer-box {
+            width: 100%;
+            min-height: 80px;
+            background-color: #fafbfc;
+            border: 1px solid var(--border-input);
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 0.95rem;
+            color: #222;
+            text-align: justify;
+        }
+
+        .concept-list {
+            background-color: #f8fafc;
+            border-left: 4px solid #64748b;
+            padding: 15px 15px 15px 35px;
+            margin: 15px 0;
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+
+        .concept-list li {
+            margin-bottom: 8px;
+        }
+
+        .fill-blank {
+            font-weight: bold;
+            color: var(--primary-color);
+            text-decoration: underline;
+            padding: 0 4px;
+        }
+
+        .reading-section {
+            background-color: var(--bg-soft);
+            border: 1px solid var(--border-input);
+            padding: 20px;
+            margin-top: 40px;
+            border-radius: 4px;
+        }
+
+        .reading-list {
+            margin: 0 0 20px 0;
+            padding-left: 20px;
+            font-size: 0.9rem;
+        }
+
+        .reading-confirmation {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            border: 1px solid #cbd5e1;
+            background-color: #ffffff;
+        }
+
+        .status-pill strong {
+            color: var(--primary-color);
+        }
+
+        .lesson-page {
+            display: none;
+        }
+
+        .lesson-page.is-active {
+            display: block;
+        }
+
+        .navigation-footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-nav {
+            border: none;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, opacity 0.2s ease;
+        }
+
+        .btn-nav:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: var(--primary-color);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #cfd9e5;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-dark);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: #ffffff;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: var(--success-dark);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+
+            .header-fields {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .container {
+                padding: 20px;
+            }
+
+            .course-progress,
+            .navigation-footer {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-nav {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="course-progress">
+            <span>Recuperación de clases en un solo archivo</span>
+            <span id="progressLabel">Página 1 de 7</span>
+        </div>
+
+        <section id="pagina-1" class="lesson-page is-active" data-title="Recuperación de Clases - Semana 1">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 100px; justify-content: flex-end;">
+                    <span class="badge-semana">S-1</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">1. Lee Juan 20:30–31; 1 Nefi 6:4 y 2 Nefi 25:23, 26. ¿Qué principio enseñan esos pasajes acerca del propósito de las Escrituras?</div>
+                <div class="answer-box">
+                    El principio fundamental que enseñan estos pasajes es que el propósito central de todas las escrituras es testificar de Jesucristo para que creamos que Él es el Hijo de Dios. Tienen como fin persuadirnos a venir a Cristo, salvarnos por medio de Su gracia divina después de hacer todo lo que podamos, y ayudar a que tanto nosotros como nuestras futuras generaciones sabamos a qué fuente acudir para la remisión de nuestros pecados.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder D. Todd Christofferson</span>
+                "...el propósito central de todas las Escrituras es llenar nuestras almas de fe en Dios el Padre y en Su Hijo Jesucristo... La fe viene por el testimonio del Espíritu Santo a nuestra alma, de Espíritu a espíritu, al escuchar o leer la palabra de Dios. Y la fe madura al seguir deleitándonos en la palabra"
+                <span class="quote-source">("La bendición de las Escrituras", Liahona, mayo de 2010, págs. 34, 35).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. ¿De qué manera las Escrituras pueden ayudarnos a fortalecer nuestra fe en Jesucristo o a acercarnos más a Él?</div>
+                <div class="answer-box">
+                    Las Escrituras actúan como un canal conducido por el Espíritu Santo para hablarnos directamente al alma. Al leerlas, escuchamos la palabra de Dios y permitimos que el Espíritu testifique de su veracidad, lo que genera fe inicial. Además, nos ayudan a acercarnos más a Él a medida que nos "deleitamos" de forma constante en sus páginas, permitiendo que esa fe madure y eche raíces profundas ante los desafíos.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. ¿De qué forma su fe en Jesucristo y su testimonio de Él se han visto fortalecidos al estudiar las Escrituras?</div>
+                <div class="answer-box">
+                    Al estudiar las escrituras de manera constante, he podido experimentar una mayor paz mental y claridad moral. Ver cómo el Salvador interactuaba con las personas en los registros sagrados, sanando y perdonando, me ha permitido comprender Su carácter misericordioso a nivel personal, transformando el conocimiento teórico en una convicción real de que Él vive y guía mi vida.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Presidente Dieter F. Uchtdorf (de la Primera Presidencia)</span>
+                "...no podemos depender del testimonio de otras personas; sino que debemos saber por nosotros mismos. El presidente Gordon B. Hinckley ha dicho: 'Todo Santo de los Últimos Días tiene la responsabilidad de llegar a saber por sí mismo, y con certeza, sin lugar a dudas, que Jesús es el Hijo resucitado y viviente del Dios viviente'... La fuente de ese conocimiento seguro y de esa firme convicción es la revelation divina, 'porque el testimonio de Jesús es el espíritu de profecía' (Apocalipsis 19:10). Recibimos ese testimonio cuando el Espíritu Santo se comunica con nuestro espíritu... La esencia de ese testimonio será siempre la fe en Jesucristo y el conocimiento de Él y de Su misión divina..."
+                <span class="quote-source">(véase "El poder de un testimonio personal", Liahona, noviembre de 2006, pág. 38).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. ¿Por qué crees que nuestro testimonio debe basarse en Jesucristo?</div>
+                <div class="answer-box">
+                    Nuestro testimonio debe basarse firmemente en Jesucristo porque Él es la roca y el único fundamento seguro sobre el cual podemos edificar nuestras vidas. Los testimonios basados en líderes, personas o circunstancias externas pueden tambalearse si estas fallan; en cambio, el testimonio anclado en Cristo permanece inalterable porque Su misión, Su amor y Su expiación son perfectos, eternos y divinamente seguros.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. ¿Qué piensas que le gustaría al Salvador que hicieras con el testimonio que tienes de Él?</div>
+                <div class="answer-box">
+                    Al Salvador le gustaría que use mi testimonio no solo como un conocimiento pasivo, sino como una fuerza activa. Desea que lo comparta con los demás mediante mis acciones, prestando servicio desinteresado y reflejando Su luz en mi diario vivir para ayudar a edificar la fe de quienes me rodean y ser un testigo viviente de Su Evangelio.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder D. Todd Christofferson (del Quórum de los Doce Apóstoles)</span>
+                "...Las demás personas deberían poder ver en nosotros algo de Jesucristo. La forma en que actuemos, hablemos, el aspecto que tengamos y hasta nuestros pensamientos serán un reflejo de Él y de Su manera de proceder... Aunque no estábamos presentes con Él durante Su ministerio, al escudriñar las Escrituras, vemos a Jesús y lo que Él dijo e hizo. Y al imitar ese modelo, damos testimonio de Él"
+                <span class="quote-source">("Cómo llegar a ser testigo de Cristo", Liahona, marzo de 2008, pág. 60).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">6. ¿De qué manera has visto a otras personas compartir su testimonio de Jesucristo por medio de sus acciones?</div>
+                <div class="answer-box">
+                    He visto a personas compartir su testimonio de Cristo cuando demuestran paciencia y amor genuino ante la adversidad, o cuando dedican su tiempo de forma silenciosa y sincera para ayudar a alguien desamparado sin esperar reconocimiento. Su lenguaje pacífico, su integridad moral en los estudios o el trabajo y su disposición a perdonar son un reflejo directo del carácter del Salvador.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">7. Al pensar en el mundo en que vivimos, ¿qué podemos hacer para que nuestro testimonio del Salvador pueda surtir efecto en los demás?</div>
+                <div class="answer-box">
+                    Para que nuestro testimonio surta efecto, debemos vivir de manera coherente con lo que profesamos creer, cuidando nuestros pensamientos, palabras y el trato hacia el prójimo. Al imitar el modelo de conducta que descubrimos al escudriñar las Escrituras, nos convertimos en un espejo de Su proceder, permitiendo que el mundo vea "algo de Jesucristo" en nosotros incluso en entornos secularizados o desafiantes.
+                </div>
+            </div>
+
+            <div class="topic-header">Jesucristo es fundamental para toda la historia de la humanidad</div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Morrison</span>
+                "Hace mucho tiempo, antes de que la Tierra en la cual vivimos comenzara a existir, Dios nuestro Padre... estableció un plan... [Ese] plan ofreció la manera perfecta para que todos los hijos de Dios reciban la inmortalidad y obtengan la vida eterna"
+                <span class="quote-source">("Life—the Gift Each Is Given", Ensign, diciembre de 1998, págs. 15–16).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">8. ¿Qué bendiciones dijo el élder Morrison que podemos llegar a recibir como parte del plan de Dios?</div>
+                <div class="answer-box">
+                    El élder Morrison destaca de forma explícita dos grandes bendiciones eternas: la oportunidad de recibir la inmortalidad (vivir para siempre con un cuerpo resucitado) y el obtener la vida eterna, que consiste en heredar el tipo de vida que Dios posee junto a nuestras familias.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">9. Leer Alma 12:22–32. Según las enseñanzas de Alma, ¿cuál sería nuestra situación eterna sin el plan de redención?</div>
+                <div class="answer-box">
+                    Sin el plan de redención, nuestra situación eterna sería catastrófica y miserable: al haber caído el género humano por la transgresión, quedaríamos encadenados espiritualmente por la muerte temporal y la muerte espiritual, sujetos para siempre a las cadenas del diablo y privados eternamente de regresar a la presencia de Dios Padre, permaneciendo en un estado de condenación interminable.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">10. ¿Por qué era esencial que se proveyera la manera de que pudiéramos superar esa situación?</div>
+                <div class="answer-box">
+                    Era esencial porque Dios, siendo un ser de perfecta justicia y misericordia, deseaba que Sus hijos progresaran. Sin una vía de escape a la muerte y al pecado, la Creación misma habría perdido su propósito y el plan de felicidad habría quedado frustrado. Se requería un puente que satisficiera las demandas de la justicia sin anular la misericordia.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">11. Lee Alma 12:33–34. ¿Cómo resumirías lo que Jesús hace posible para nosotros en el plan de Dios?</div>
+                <div class="answer-box">
+                    Jesús hace posible que, mediante el arrepentimiento y la fe en Su nombre, reclamemos la misericordia para la remisión de nuestros pecados. Al cumplir con estas condiciones divinas, Él nos abre las puertas para entrar en el descanso del Señor y obtener la salvación eterna, superando los lazos de la muerte espiritual.
+                </div>
+            </div>
+
+            <div class="topic-header">Jesucristo fue preordenado para ser nuestro Salvador</div>
+
+            <div class="question-block">
+                <div class="question-text">12. Lee Abraham 3:24–27 y 1 Pedro 1:19–20. En Abraham 3:26, ¿a qué se refieren las frases “primer estado” y “segundo estado”?</div>
+                <div class="answer-box">
+                    La frase "primer estado" se refiere a nuestra existencia preterrenal como hijos espirituales en los cielos antes de nacer. Por su parte, el "segundo estado" se refiere a nuestra vida terrenal aquí en la Tierra, el período de prueba y probación donde recibimos un cuerpo físico y demostramos si guardaremos los mandamientos de Dios.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">13. ¿Quiénes son las tres personas que se mencionan en Abraham 3:27 y qué hizo cada una de ellas?</div>
+                <div class="answer-box">
+                    Las tres personas mencionadas son: Dios el Padre, quien presentó el plan y preguntó a quién enviaría; el primer personaje (Jehová / Jesucristo), quien respondió con humildad ofreciéndose para ser el Redentor ("Heme aquí; envíame"); y el segundo personaje (Lucifer / Satanás), quien se rebeló buscando su propia gloria y forzar el albedrío, siendo finalmente rechazado por el Padre.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">14. Cuando Jehová le dijo al Padre: “Heme aquí; envíame”, ¿qué estaba comprometiéndose a hacer en la vida terrenal?</div>
+                <div class="answer-box">
+                    Se estaba comprometiendo de manera voluntaria a descender al mundo terrenal, tomar un cuerpo de carne y hueso, vivir una vida perfecta sin pecado y, de forma crucial, llevar a cabo el sacrificio expiatorio infinito, asumiendo los dolores, enfermedades y pecados de toda la humanidad, rindiendo toda la gloria y honra eternamente al Padre.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Jeffrey R. Holland</span>
+                "...en el concilio preterrenal, aparentemente [Jesucristo] era el único suficientemente humilde y dispuesto a ser preordenado para [llevar a cabo la Expiación infinita]"
+                <span class="quote-source">("La expiación de Jesucristo", Liahona, marzo de 2008, pág. 35).</span>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Profeta José Smith</span>
+                "Al efectuarse la primera organización en los cielos, todos estuvimos presentes, y presenciamos la elección y nombramiento del Salvador, y la formación del plan de salvación, y nosotros lo aprobamos"
+                <span class="quote-source">(Enseñanzas de los Presidentes de la Iglesia: José Smith, 2007, pág. 220).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">15. ¿Qué representó para nuestras posibilidades futuras la decisión del Padre Celestial de escoger a Jehová como nuestro Redentor?</div>
+                <div class="answer-box">
+                    Representó la garantía absoluta de que el plan de salvación triunfaría. Al elegir al único ser infinitamente humilde, capaz y dispuesto a realizar la Expiación, se aseguró que la puerta hacia la resurrección y la exaltación quedara abierta para todos nosotros, dándonos esperanza real de vencer el pecado y la muerte.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">16. ¿Qué creen que sabías tú sobre Jehová que haya hecho que sostuvieras Su llamamiento y nombramiento como tu Salvador y Redentor?</div>
+                <div class="answer-box">
+                    Sabía con total certeza que Su amor por nosotros era perfecto, que Su obediencia al Padre era absoluta y que Su carácter poseía la fortaleza y la mansedumbre necesarias para no fallar en la horrorosa carga de la Expiación. Conociendo Su fidelidad infinita, depositamos nuestra confianza eterna en Él en el gran Concilio.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Robert D. Hales</span>
+                "...piensen en esto: En nuestro estado premortal, ¡elegimos seguir al Salvador Jesucristo! Y por haberlo hecho, se nos permitió venir a la Tierra. Testifico que al hacer la misma elección de seguir al Salvador ahora, aquí en la Tierra, obtendremos una bendición aún mayor en las eternidades; pero conste que debemos continuar escogiendo seguir al Salvador. La eternidad está en juego, y el uso prudente del albedrío y nuestras acciones son esenciales para que logremos la vida eterna"
+                <span class="quote-source">("El albedrío: Esencial para el plan de la vida", Liahona, noviembre de 2010, pág. 25).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">17. ¿Qué aprendemos de la declaración del élder Hales acerca de nuestras decisiones en esta vida?</div>
+                <div class="answer-box">
+                    Aprendemos que el albedrío no es un evento de una sola vez, sino una constante. Así como nuestra decisión correcta en la vida premortal nos otorgó el privilegio de venir a la Tierra, las decisiones diarias que tomamos aquí abajo determinarán nuestro destino eterno; debemos continuar escogiendo seguir activamente al Salvador.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">18. ¿Qué crees que quiso decir el élder Hales con la frase “la eternidad está en juego”?</div>
+                <div class="answer-box">
+                    Quiso decir que esta vida terrenal no es un pasatiempo intrascendente; es el examen decisivo. El cómo usemos nuestra libertad para elegir hoy definirá permanentemente si heredaremos un reino de gloria celestial al lado de Dios o si perderemos el derecho a esas bendiciones infinitas por toda la eternidad.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">19. ¿Cuáles son algunas actitudes y acciones que indican que alguien está escogiendo seguir a Jesucristo?</div>
+                <div class="answer-box">
+                    Indicadores claros son la búsqueda constante de la oración sincera, el estudio humilde de las escrituras, el guardar los mandamientos de Dios a pesar de la presión social, el mostrar compasión y empatía genuina hacia los menos afortunados, el pedir perdón rápidamente y el poseer un semblante pacífico e íntegro ante las pruebas.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">20. ¿Qué podemos hacer para que Él forme una parte más central de nuestra vida durante la semana?</div>
+                <div class="answer-box">
+                    Podemos comenzar el día consagrando nuestros pensamientos a Él mediante la oración matutina, repasar pequeños pasajes de las escrituras en nuestros trayectos diarios o descansos, y evaluar nuestras acciones cotidianas preguntándonos sinceramente: "¿Qué haría Jesús en mi lugar?". Mantener un espíritu de gratitud en medio de las tareas universitarias o laborales ayuda a que Su presencia sea continua.
+                </div>
+            </div>
+
+            <div class="reading-section">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Lecturas para el alumno</h3>
+                <ul class="reading-list">
+                    <li>• Juan 20:30–31; 1 Nefi 6:4; 2 Nefi 25:23, 26.</li>
+                    <li>• “El Cristo Viviente: El Testimonio de los Apóstoles”, Liahona, abril de 2000, págs. 2–3.</li>
+                    <li>• Dieter F. Uchtdorf, “El poder de un testimonio personal”, Liahona, noviembre de 2006, págs. 37–39.</li>
+                    <li>• Alma 12:22–34; 34:9; 42:8, 11; Doctrina y Convenios 22:1; 45:9; 66:2; Abraham 3:24–27; 1 Pedro 1:19–20; Moisés 4:2.</li>
+                    <li>• Robert D. Hales, “El albedrío: Esencial para el plan de la vida”, Liahona, noviembre de 2010, págs. 24–27.</li>
+                </ul>
+                <div class="reading-confirmation">
+                    <span>¿HE COMPLETADO LAS LECTURAS PARA EL ALUMNO?</span>
+                    <span class="status-pill"><strong>SÍ</strong></span>
+                    <span class="status-pill">TODAVÍA</span>
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" disabled>Anterior</button>
+                <button class="btn-nav btn-primary" type="button" onclick="mostrarPagina(1)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-2" class="lesson-page" data-title="Recuperación de Clases - Semana 4">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 100px; justify-content: flex-end;">
+                    <span class="badge-semana">S-4</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header">Jesucristo, el Hijo Unigénito de Dios en la carne</div>
+            <h3 class="topic-subheader">“El Unigénito del Padre”</h3>
+
+            <div class="question-block">
+                <div class="question-text">1. Lea Mateo 1:18–19. ¿Cómo se sentirían si se encontraran en una situación similar a la de José?</div>
+                <div class="answer-box">
+                    En una situación similar, es natural experimentar una profunda confusión, dolor e incertidumbre emocional. El compromiso matrimonial en la cultura judía era un pacto legal y sagrado riguroso; descubrir un embarazo sin una explicación comprensible bajo las leyes humanas habría puesto a prueba cualquier lazo de confianza, exigiendo una inmensa madurez moral para no reaccionar con ira o buscar la humillación pública de la otra persona.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. Lea Mateo 1:20–24 y determinen por qué José decidió no “dejarla secretamente [a María]” (versículo 19), lo cual significaba anular en forma privada su compromiso de matrimonio con ella.</div>
+                <div class="answer-box">
+                    José cambió de parecer porque recibió la visita de un ángel del Señor en un sueño, quien le reveló el origen divino de la concepción por medio del Espíritu Santo y la misión salvadora del niño. Su profunda rectitud espiritual y su fe en los mensajes divinos le permitieron disipar sus temores, decidiendo asumir con nobleza el rol de protector legal y terrenal del Salvador.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. Leer Lucas 1:26–30 y busque lo que ese pasaje enseña acerca de María.</div>
+                <div class="answer-box">
+                    El pasaje enseña que María era una mujer sumamente virtuosa, pura y favorecida por Dios, habiendo hallado gracia ante Sus ojos. Muestra que poseía un espíritu humilde y reflexivo, capaz de escuchar con reverencia y recibir pacientemente un llamamiento divino de trascendencia cósmica, a pesar del asombro natural que la aparición angelical le produjo.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. ¿Qué rasgos importantes heredó el Salvador de cada uno de Sus padres?</div>
+                <div class="answer-box">
+                    De Su madre mortal, María, Jesús heredó la condición física de la mortalidad, que incluía la capacidad de sufrir dolor, hambre, sed, cansancio y, fundamentalmente, la capacidad de morir físicamente. De Su Padre Eterno, Elohim, heredó los poderes de la divinidad, la inmortalidad, una voluntad espiritual perfecta y la capacidad absoluta de retener el control sobre Su propia vida y muerte.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. Leer Mosíah 3:7–8. ¿Por qué necesitaba el Salvador los poderes tanto de la mortalidad como de la inmortalidad para llevar a cabo la Expiación?</div>
+                <div class="answer-box">
+                    Necesitaba la mortalidad para poder experimentar en carne propia el dolor infinito, las tentaciones y el derramamiento de sangre, sirviendo como un sacrificio real que pudiera morir físicamente por la humanidad. Paralelamente, requería la inmortalidad divina para que su sufrimiento no fuera interrumpido por una muerte prematura, permitiéndole soportar una carga que aplastaría a cualquier ser humano común y asegurando su poder para levantarse de los muertos mediante la Resurrección.
+                </div>
+            </div>
+
+            <div class="topic-header">Nefi vio la condescendencia de Dios</div>
+
+            <div class="question-block">
+                <div class="question-text">6. Lea 1 Nefi 11:13–21. Según lo que Nefi aprendió, ¿quiénes serían los padres de Jesucristo?</div>
+                <div class="answer-box">
+                    Nefi aprendió por revelation que los padres de Jesucristo serían Dios, el Padre Eterno en los cielos, y María, una virgen mortal de la ciudad de Nazaret, sumamente hermosa y pura, descrita espiritualmente como la madre del Hijo de Dios según la carne.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">7. Lea Lucas 1:31–35. ¿De qué manera confirman esos versículos quién es el Padre de Jesús?</div>
+                <div class="answer-box">
+                    Los versículos lo confirman explícitamente cuando el ángel Gabriel le declara a María que el niño que concebirá será llamado "Hijo del Altísimo". Explica que el proceso no ocurriría por vías humanas ordinarias, sino que el Espíritu Santo vendría sobre ella y el poder del Dios Omnipotente la cubriría con Su sombra, garantizando que el Santo Ser que nacería sería textualmente el Hijo de Dios.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder James E. Talmage (1862–1933)</span>
+                "Ese Hijo que había de nacer de María fue engendrado por Elohim, el Padre Eterno, no contraviniendo las leyes naturales, sino de acuerdo con una manifestación superior de las mismas… En Su naturaleza habrían de combinarse los poderes de la divinidad, y la capacidad y posibilidades del estado mortal; y esto de acuerdo con la operación normal de la ley fundamental de la herencia —declarada por Dios, demostrada por la ciencia y admitida por la filosofía— de que los seres vivientes se han de propagar según su especie. El niño Jesús habría de heredado los rasgos físicos, mentales y espirituales, las tendencias y poderes que distinguían a Sus padres: uno inmortal y glorificado, a saber, Dios; el otro humano, una mujer"
+                <span class="quote-source">(véase Jesús el Cristo, 1964, pág. 85).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">8. Tomando en cuenta las lecciones de este curso que hasta aquí hemos tenido, ¿por qué razón el nacimiento de Jesucristo se consideraría parte de Su condescendencia?</div>
+                <div class="answer-box">
+                    Se considera condescendencia porque implica que un Dios celestial, el gran Jehová, Creador de mundos incontables, aceptó voluntariamente dejar Su trono de gloria infinita para descender al nivel más humilde de la existencia humana. Someterse a nacer como un bebé indefenso, caminar entre las limitaciones de un cuerpo de carne y hueso, sufrir dolores terrenales y exponerse al rechazo de Su propia creación representa el acto de amor y humildad más profundo que el universo haya presenciado.
+                </div>
+            </div>
+
+            <div class="topic-header">Jesucristo cumplió toda justicia</div>
+            <h3 class="topic-subheader">El bautismo de Jesucristo</h3>
+
+            <div class="question-block">
+                <div class="question-text">9. Lea Mateo 3:13–17. ¿Qué razón dio Jesús para ser bautizado?</div>
+                <div class="answer-box">
+                    Cuando Juan el Bautista intentaba detenerlo argumentando que él necesitaba ser bautizado por el Salvador, Jesús le respondió que era necesario que pasaran por esa ordenanza sagrada "porque así conviene que cumplamos toda justicia".
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">10. ¿Qué creen que quiere decir que Jesús fue bautizado para “cumplir toda justicia”? (Mateo 3:15).</div>
+                <div class="answer-box">
+                    Significa que, a pesar de ser un ser perfecto y completamente libre de pecado, el Salvador reconoció que no estaba exento de obedecer las leyes y los mandamientos estipulados por el Padre Celestial. Al bautizarse, demostró una sumisión absoluta a los convenios divinos, validó la autoridad del sacerdocio ejercida por Juan y selló la norma que todos los hijos de Dios deben seguir para acceder a la salvación.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">11. ¿De qué manera el bautismo de Jesucristo nos da el ejemplo de lo que significa ser justo?</div>
+                <div class="answer-box">
+                    Nos enseña que la verdadera justicia no se basa únicamente en la ausencia de pecados externos, sino en una disposición constante e interna de obediencia e integridad espiritual. Se manifiesta a través de los siguientes pilares clave:
+                    <ul class="concept-list">
+                        <li>Ser justo significa obedecer humildemente la voluntad del Padre.</li>
+                        <li>Ser justo significa hacer convenio con el Padre de que obedeceremos Sus mandamientos.</li>
+                        <li>Ser justo significa recibir las ordenanzas de salvación.</li>
+                        <li>Ser justo significa seguir el ejemplo de Jesucristo.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">12. ¿Cómo podemos poner en práctica en nuestra vida el ejemplo de justicia que nos dio Jesús?</div>
+                <div class="answer-box">
+                    Podemos ponerlo en práctica manteniendo una actitud humilde frente a las instrucciones del Señor, cumpliendo fielmente con las promesas y los convenios que realizamos en nuestras propias ordenanzas, y buscando activamente hacer el bien al prójimo sin importar si las circunstancias nos favorecen o no. Ser justos implica vivir de manera coherente con los principios del Evangelio cada día.
+                </div>
+            </div>
+
+            <div class="topic-header">Seguir el ejemplo del Salvador</div>
+
+            <div class="question-block">
+                <div class="question-text">13. Lea 2 Nefi 31:10–12. En el versículo 10, ¿qué invitación nos extendió el Salvador a todos nosotros?</div>
+                <div class="answer-box">
+                    El Salvador nos extendió una invitación directa, clara e ineludible al decirnos con autoridad divina: "Sígueme tú". Nos insta a imitar Sus pasos y Su carácter para caminar por la senda que conduce de regreso al hogar celestial.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">14. De acuerdo con esos versículos, ¿qué dijo Jesús que debemos hacer para seguirlo?</div>
+                <div class="answer-box">
+                    Jesús declaró que para seguirlo debemos estar dispuestos a bautizarnos en el agua tal como Él lo hizo, demostrando un corazón sincero ante el Padre Celestial, y estar listos para recibir el bautismo de fuego y del Espíritu Santo, el cual limpia nuestras almas y actúa como un testimonio de nuestra adopción en Su reino.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">15. Lean 2 Nefi 31:16–17. ¿Qué más debemos hacer para seguir el ejemplo del Salvador?</div>
+                <div class="answer-box">
+                    Los pasajes indican que el bautismo es solo la puerta de entrada. Después de cruzar el umbral, debemos arrepentirnos diariamente de nuestras faltas, mostrar un corazón quebrantado y un espíritu contrito, y avanzar con paso firme por la senda estrecha, deleitándonos en las palabras de Cristo y perseverando con fe inquebrantable hasta el fin de nuestros días terrenales.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">16. ¿Qué significa perseverar hasta el fin y seguir “el ejemplo del Hijo del Dios viviente”?</div>
+                <div class="answer-box">
+                    Significa mantener nuestra lealtad y devoción al Salvador inalterables a lo largo del tiempo, resistiendo las tentaciones, el desánimo o las dudas que puedan surgir en las diferentes etapas de la vida. Seguir Su ejemplo implica asimilar Su carácter misericordioso y obediente como nuestro propio estilo de vida permanente, sin apartarnos jamás del camino marcado por los convenios.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">17. Lea Romanos 6:3–6 y busque palabras o frases clave que confirmen que seguir el ejemplo de Jesucristo requiere más que ser bautizado.</div>
+                <div class="answer-box">
+                    Las frases clave como "sepultados juntamente con él para muerte por el bautismo" y "caminemos en vida nueva" confirman que el acto físico en el agua simboliza una transformación espiritual completa. Significa que nuestro "viejo hombre" propenso al pecado debe ser crucificado con Él, destruyendo el cuerpo del pecado para dejar de ser esclavos de la iniquidad y resucitar simbólicamente hacia una rutina diaria completamente renovada en justicia.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Robert D. Hales</span>
+                "Cuando comprendemos nuestro convenio bautismal y el don del Espíritu Santo, ello cambiará nuestra vida y asentará nuestra total lealtad al reino de Dios. Si al salirnos al paso las tentaciones prestamos atención, el Espíritu Santo nos traerá a la memoria que hemos prometido recordar a nuestro Salvador y obedecer los mandamientos de Dios… Al seguir el ejemplo de Jesús, también nosotros demostramos que nos arrepentiremos y seremos obedientes en guardar los mandamientos de nuestro Padre Celestial. Nos humillamos con un corazón quebrantado y un espíritu contrito al admitir nuestros pecados y buscar el perdón por nuestras transgresiones (véase 3 Nefi 9:20). Hacemos convenio de que estamos dispuestos a tomar sobre nosotros el nombre de Jesucristo y recordarle siempre… Ruego que cada uno de nosotros, en calidad de miembros de Su reino, comprenda que nuestro bautismo y confirmación es la entrada a Su reino. Cuando entramos, hacemos convenio de ser de Su reino, ¡para siempre!"
+                <span class="quote-source">(véase "El convenio del bautismo: Estar en el reino y ser del reino", Liahona, enero de 2001, págs. 7, 8, 9).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">18. ¿De qué manera el ser bautizado los ha ayudado a seguir el ejemplo de Jesucristo de cumplir toda justicia?</div>
+                <div class="answer-box">
+                    El bautismo actúa como un ancla moral constante en la vida diaria. Al recordar las promesas efectuadas en esa ordenanza, el Espíritu Santo trae a mi memoria el compromiso adquirido de defender la verdad y servir a los demás. Me proporciona una brújula espiritual clara que me ayuda a rechazar las distracciones mundanas, alineando mis metas académicas y personales con la lealtad eterna al reino de Dios.
+                </div>
+            </div>
+
+            <div class="reading-section">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Lecturas para el alumno</h3>
+                <ul class="reading-list">
+                    <li>• Mateo 1:18–25; Lucas 1:26–38; Mosíah 3:7–8; 1 Nefi 11:13–21.</li>
+                    <li>• Mateo 3:13–17; 2 Nefi 31:4–21; Romanos 6:3–6.</li>
+                    <li>• “El Cristo Viviente: El Testimonio de los Apóstoles”, Liahona, abril de 2000, págs. 2–3.</li>
+                </ul>
+                <div class="reading-confirmation">
+                    <span>¿HE COMPLETADO LAS LECTURAS PARA EL ALUMNO?</span>
+                    <span class="status-pill"><strong>SÍ</strong></span>
+                    <span class="status-pill">TODAVÍA</span>
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(0)">Lección anterior</button>
+                <button class="btn-nav btn-primary" type="button" onclick="mostrarPagina(2)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-3" class="lesson-page" data-title="Recuperación de Clases - Semana 5">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 100px; justify-content: flex-end;">
+                    <span class="badge-semana">S-5</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header">La profunda influencia del Salvador</div>
+            <h3 class="topic-subheader">Jesucristo llevó una vida libre de pecado</h3>
+
+            <div class="question-block">
+                <div class="question-text">1. Después de que Jesús fue bautizado, Satanás lo tentó a hacer cosas que se podrían categorizar como “mi voluntad”. Leer Mateo 4:1–11. ¿Qué notaron acerca de la forma en que el Salvador respondió a las tentaciones de Satanás?</div>
+                <div class="answer-box">
+                    El Salvador respondió con una firmeza inmediata, absoluta e inquebrantable, recurriendo repetidamente a las Sagradas Escrituras mediante la frase "Escrito está". No se detuvo a deliberar, dialogar ni sopesar las propuestas del adversario, lo que demuestra que su mente y corazón estaban completamente alineados con la palabra escrita de Dios, rechazando los engaños de manera instantánea basándose en los mandamientos eternos del Padre.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. ¿Qué aprenden del ejemplo del Salvador en esos versículos?</div>
+                <div class="answer-box">
+                    Aprendo que la preparación espiritual previa y el conocimiento profundo de las escrituras son fundamentales para resistir el mal. Jesús nos enseña que para vencer la tentación debemos reaccionar de inmediato, sin dar cabida a la duda ni racionalizar el pecado; asimismo, nos demuestra que el uso de las verdades del Evangelio sirve como un escudo protector eficaz contra las presiones externas del adversario.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. ¿En qué se parecen las tentaciones que enfrentó el Salvador a las que nosotros enfrentamos en la vida?</div>
+                <div class="answer-box">
+                    Se parecen en que atacan los mismos aspectos vulnerables de la naturaleza humana: las necesidades físicas y apetitos del cuerpo (convertir piedras en pan), el orgullo, la vanidad y el deseo de figurar públicamente (arrojarse del templo), y la ambición de poder, riquezas o el control sobre los bienes del mundo (los reinos de la tierra). Satanás utiliza las mismas categorías de engaño hoy en día para desviar nuestros propósitos divinos.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Presidente David O. McKay</span>
+                "Casi toda tentación que nos sobreviene a ustedes y a mí llega a través de una de esas tres formas: (1) una tentación vinculada a los apetitos o a las pasiones corporales; (2) una petición al orgullo, a la vanidad o al egocentrismo; o (3) una tentación del mundo material o el deseo de poder sobre la riqueza terrenal o el dominio de los hombres."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. Lean Hebreos 2:17–18; 4:15–16 y DyC 20:22. ¿Por qué fue necesario que Jesús tuviera tentaciones?</div>
+                <div class="answer-box">
+                    Fue necesario para que pudiera desarrollar una empatía perfecta hacia nosotros, experimentando en su propia carne las flaquezas y debilidades que plagan la condición humana. Al sufrir las tentaciones sin ceder ante ellas, el Salvador se capacitó plenamente para socorrernos con misericordia justa, convirtiéndose en un Sumo Sacerdote compasivo que comprende a la perfección lo difícil que es la vida mortal.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. ¿Por qué es importante que comprendamos que Jesucristo experimentó el mismo tipo de tentaciones que enfrentamos hoy en día?</div>
+                <div class="answer-box">
+                    Es crucial porque nos infunde confianza absoluta al acercarnos a Él en busca de consuelo y fortaleza. Al saber que Él enfrentó los mismos desafíos y presiones mundanas, no nos sentimos juzgados, sino comprendidos de verdad. Esto nos asegura que Su gracia y perdón no nacen de una teoría, sino de una vivencia real y perfecta que venció al mundo, dándonos esperanza de que nosotros también podemos vencer.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">6. Leer Lucas 22:42, 44 y 3 Nefi 11:11 y busque un atributo de Jesucristo que sea otro ejemplo de Su vida inigualable.</div>
+                <div class="answer-box">
+                    El atributo más destacado en estos versículos es la sumisión absoluta y voluntaria a la voluntad del Padre Celestial. Incluso frente al sufrimiento más desgarrador e incomprensible imaginable en el jardín de Getsemaní, el Salvador antepuso los propósitos eternos de Elohim a sus propios temores mortales, exclamando: "No se haga mi voluntad, sino la tuya", bebiendo así de la amarga copa con sumisión perfecta.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Presidente Ezra Taft Benson</span>
+                "Él sufrió dolores, tentaciones y aflicciones de toda clase a fin de que Sus entrañas se llenaran de misericordia para saber cómo socorrer a Su pueblo. Vivió una vida absolutamente perfecta, sin cometer jamás un solo pecado, entregando Su voluntad enteramente al Padre."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">7. En el plan de salvación del Padre Celestial, ¿por qué era necesario que Jesús fuera absolutamente libre de pecado y completamente sumiso a la voluntad del Padre Celestial?</div>
+                <div class="answer-box">
+                    Era indispensable porque la Expiación requería un sacrificio infinitamente puro y sin mancha para satisfacer las demandas rigurosas de la justicia eterna. Si Jesús hubiera cometido un solo pecado, habría quedado sujeto a la muerte espiritual por sus propias transgresiones y no habría podido rescatar a otros. Su sumisión perfecta garantizó la validez universal de Su ofrenda redentora a favor de toda la humanidad.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">8. ¿De qué manera influye en la fe que tienen en Jesucristo el saber que vivió una vida libre de pecado?</div>
+                <div class="answer-box">
+                    Esta verdad consolida mi fe al darme la total certeza de que el Salvador es un cimiento perfecto e infalible. Saber que venció todo obstáculo sin una sola fisura moral me inspira a depositar mi vida entera en Sus manos, confiando en que Sus promesas son verdaderas y que Su poder para limpiarme, guiar mis pasos universitarios y santificar mis esfuerzos personales es real y absoluto.
+                </div>
+            </div>
+
+            <div class="topic-header">Ser un discípulo de Jesucristo</div>
+
+            <div class="question-block">
+                <div class="question-text">9. Lea Mateo 4:18–22 y Lucas 5:11 y buscar los sacrificios que algunos de los primeros discípulos de Jesucristo hicieron a fin de aceptar el llamado de seguirlo. ¿Qué importantes verdades enseñan esos pasajes acerca de lo que significa ser un discípulo de Jesucristo?</div>
+                <div class="answer-box">
+                    Los pasajes enseñan que el verdadero discipulado exige una disposición genuina a sacrificar nuestras comodidades y seguridades inmediatas. Los apóstoles abandonaron instantáneamente sus redes, sus barcas, sus negocios y a sus familias para seguir al Salvador. Esto nos revela la gran verdad de que seguir a Cristo requiere prioridad absoluta, constancia y fe para postergar lo temporal frente a lo eterno.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">10. ¿Cómo describirían la respuesta de esos discípulos de antaño al mandamiento del Salvador de seguirlo?</div>
+                <div class="answer-box">
+                    Su respuesta fue inmediata, decidida, valiente y exenta de excusas o dilaciones. No dudaron ni pidieron tiempo para arreglar asuntos personales pendientes; demostraron una devoción pura y una confianza implícita en la voz del Maestro, dejando atrás todo lo que constituía su sustento diario y su estabilidad económica de un momento a otro.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Joseph B. Wirthlin</span>
+                "Las redes se definen generalmente como artefactos para atrapar algo; en un sentido más importante, podríamos definir una red como cualquier cosa que nos tiente o nos impida seguir el llamado de Jesucristo, el Hijo del Dios Viviente. En este contexto, las redes pueden ser nuestro trabajo, nuestros pasatiempos, nuestros placeres y, por encima de todo, nuestras tentaciones y pecados. En resumen, una red puede ser cualquier cosa que nos aleje de nuestra relación con nuestro Padre Celestial y con Su Iglesia restaurada."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">11. Si los pescados, las redes y las barcas que los pescadores abandonaron representan sus preocupaciones temporales, ¿qué cosas puede el Salvador llegar a pedirles a ustedes que dejen a un lado para seguirlo?</div>
+                <div class="answer-box">
+                    El Salvador puede pedirme que deje a un lado el orgullo, el deseo excesivo de reconocimiento social o académico, las ambiciones egoístas de riqueza material que descuidan lo espiritual, el tiempo excesivo invertido en entretenimientos digitales o pasatiempos mundanos, y el temor al qué dirán las personas al defender mis normas éticas en el ámbito universitario.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">12. ¿Por qué a veces es difícil abandonar las preocupaciones temporales?</div>
+                <div class="answer-box">
+                    Es difícil porque las preocupaciones del mundo ofrecen una gratificación inmediata, son tangibles, visibles y demandan nuestra atención diaria (estudios, dinero, estatus). El ser humano tiende por naturaleza a buscar la seguridad en lo que puede ver y tocar, haciendo que requiera un ejercicio constante de fe confiar en las promesas espirituales a largo plazo del Señor, las cuales trascienden nuestra realidad terrenal inmediata.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">13. ¿Cómo puede alguien reconocer si está atrapado en el tipo de redes que menciona el élder Wirthlin?</div>
+                <div class="answer-box">
+                    Se puede reconocer analizando con honestidad en qué invertimos nuestro tiempo, pensamientos y recursos principales. Si las actividades mundanas, el trabajo o el estudio nos causan un desánimo constante que nos lleva a descuidar las oraciones, el estudio de las escrituras o la asistencia a las reuniones sagradas, significa que esas cosas se han transformado en redes sutiles que aprisionan nuestro progreso eterno.
+                </div>
+            </div>
+
+            <div class="reading-section">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Lecturas para el alumno</h3>
+                <ul class="reading-list">
+                    <li>• Mateo 4:1–11; Hebreos 2:17–18; 4:15–16; Doctrina y Convenios 20:22.</li>
+                    <li>• Lucas 22:42, 44; 3 Nefi 11:11; Mateo 4:18–22; Lucas 5:11.</li>
+                    <li>• James E. Faust, “El discipulado”, Liahona, noviembre de 2006, págs. 20–22.</li>
+                </ul>
+                <div class="reading-confirmation">
+                    <span>¿HE COMPLETADO LAS LECTURAS PARA EL ALUMNO?</span>
+                    <span class="status-pill"><strong>SÍ</strong></span>
+                    <span class="status-pill">TODAVÍA</span>
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(1)">Lección anterior</button>
+                <button class="btn-nav btn-primary" type="button" onclick="mostrarPagina(3)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-4" class="lesson-page" data-title="Recuperación de Clases - Lección 11 y 12">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 120px; justify-content: flex-end;">
+                    <span class="badge-semana">L-11 y 12</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header">Jesucristo anduvo haciendo bienes</div>
+            <h3 class="topic-subheader">Jesucristo fue perseguido por hacer el bien</h3>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Jeffrey R. Holland</span>
+                "Con admiración y ánimo por todos los que tendrán que permanecer firmes en estos últimos días, les digo a todos, y especialmente a los jóvenes de la Iglesia, que, si aún no les ha tocado, un día se encontrarán ante el llamado de defender su religión o quizás hasta soportar un poco de maltrato personal por el simple hecho de ser miembros de La Iglesia de Jesucristo de los Santos de los Últimos Días. En esos momentos se requerirá de parte de ustedes tanto valentía como cortesía..."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">1. ¿Qué hicieron las misioneras después de recibir el maltrato del hombre en la plaza?</div>
+                <div class="answer-box">
+                    Las misioneras decidieron marcharse del lugar en silencio y sin proferir ninguna palabra de queja o discusión. Aunque una de ellas sintió el impulso natural e inmediato de confrontar al hombre y reclamarle por su conducta violenta, se contuvo y se retiró dignamente, limpiándose los alimentos que le habían arrojado.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. ¿De qué manera emularon las misioneras el ejemplo del Salvador?</div>
+                <div class="answer-box">
+                    Emularon Su ejemplo al responder con absoluta mansedumbre, templanza y control emocional ante una agresión injustificada. Al no responder a los insultos con más insultos ni buscar venganza física, aplicaron el principio cristiano de "poner la otra mejilla" y reaccionar con cortesía y valentía silenciosa, tal como lo hizo Cristo frente a Sus perseguidores.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. Lea Hechos 10:38 y busquen una frase que resuma el ministerio mortal del Salvador.</div>
+                <div class="answer-box">
+                    La frase del pasaje de Hechos que resume a la perfección el ministerio terrenal del Salvador es: "...este anduvo haciendo bienes y sanando a todos los oprimidos por el diablo, porque Dios estaba con él".
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. Lean Juan 5:16 y busque lo que le sucedió a Jesús por haber sanado al hombre enfermo en el estanque de Betesda en el día de reposo.</div>
+                <div class="answer-box">
+                    A causa de esta milagrosa sanación, los judíos comenzaron a perseguir encarnizadamente a Jesús y buscaban matarle, ya que consideraban que realizar actos de curación en el día de reposo constituía una violación directa a las leyes tradicionales del Shabat, ignorando la naturaleza misericordiosa del milagro.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. Lea Juan 15:18–20. ¿Qué enseñó Jesús a Sus discípulos en cuanto a lo que les sucedería debido a que ellos testificaban de Él y hacían buenas obras?</div>
+                <div class="answer-box">
+                    Jesús enseñó que Sus discípulos no debían sorprenderse si el mundo los aborrecía o perseguía, recordándoles que el mundo lo aborreció a Él primero. Les advirtió claramente que, dado que ellos ya no pertenecían a las corrientes del mundo sino que habían sido elegidos por Él, el mundo actuaría con hostilidad, y que si a Él lo habían perseguido, inevitablemente también los perseguirían a ellos.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">6. ¿Qué principio aprendemos de esos versículos?</div>
+                <div class="answer-box">
+                    Aprendemos el principio de que los verdaderos seguidores de Jesucristo que se esfuerzan por hacer el bien y defender Su Evangelio a menudo enfrentarán oposición, incomprensión o persecución por parte del mundo, ya que los valores y la luz de Cristo contrastan directamente con los caminos y criterios seculares.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">7. ¿De qué manera responder a la persecución con valentía y cortesía nos ayuda a acercarnos más al Salvador?</div>
+                <div class="answer-box">
+                    Nos ayuda porque nos permite experimentar en una pequeña escala el tipo de sufrimiento, rechazo y sacrificio que el Salvador vivió por nosotros. Al someter nuestro orgullo y reaccionar con amor y templanza en momentos de tensión, purificamos nuestro carácter y forjamos un lazo de empatía espiritual más profundo con Cristo, asimilando Sus atributos divinos.
+                </div>
+            </div>
+
+            <div class="topic-header">Jesucristo sanó a los enfermos y bendijo a los afligidos</div>
+            <h3 class="topic-subheader">Los milagros en el ministerio de Cristo</h3>
+
+            <div class="question-block">
+                <div class="question-text">8. Leer Lucas 7:11–15 y determine qué motivó al Salvador a realizar el milagro de resucitar al hijo de la viuda.</div>
+                <div class="answer-box">
+                    La motivación principal del Salvador fue una profunda y pura compasión. Al ver el desgarrador dolor de la madre, quien no solo había perdido a su esposo sino ahora también a su único hijo varón (dejándola en un estado de total desamparo social y económico), el Señor se conmovió profundamente, se acercó a ella y le dijo "No llores" antes de efectuar el milagro.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">9. ¿Qué palabra usó Lucas para describir la motivación de Jesús? ¿Por qué es importante esa palabra?</div>
+                <div class="answer-box">
+                    Lucas utilizó la palabra "compasión". Esta palabra es de vital importancia porque demuestra que los milagros de Jesucristo no eran meras demostraciones teatrales de poder para ganar popularidad o impresionar a los escépticos, sino expresiones genuinas, espontáneas e individuales del amor perfecto y divino que sentía por el sufrimiento de las personas.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Dallin H. Oaks</span>
+                "Muchos sanidades ocurren por medio de las bendiciones del sacerdocio. El poder del sacerdocio está presente en esta Iglesia, y se manifiesta en las curaciones de los enfermos, en las liberaciones de los afligidos y en el otorgamiento de fuerza espiritual..."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">10. ¿Por qué creen que es importante reconocer que el Salvador todavía sana a las personas hoy en día?</div>
+                <div class="answer-box">
+                    Es fundamental porque mantiene viva nuestra esperanza y fortalece nuestra fe en un Dios viviente que no ha cambiado. Reconocer que Su poder sanador sigue activo a través de las bendiciones del sacerdocio y de la fe nos consuela ante las enfermedades físicas o mentales actuales, asegurándonos que Su misericordia está tan disponible para nosotros hoy como lo estuvo para los habitantes de Judea.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">11. ¿En qué forma han sido testigos ustedes del poder sanador del Salvador en su vida o en la de alguien que conozcan?</div>
+                <div class="answer-box">
+                    He sido testigo de Su poder sanador al observar cómo personas cercanas han recuperado la salud física de forma inexplicable tras recibir una bendición del sacerdocio con fe. No obstante, el milagro más constante que he presenciado es la sanación emocional y espiritual: la forma en que Cristo alivia la pesadumbre del alma, restaura la paz mental tras una pérdida trágica y cura corazones quebrantados por el pecado o la depresión.
+                </div>
+            </div>
+
+            <div class="topic-header">La fe y la voluntad del Padre Celestial</div>
+
+            <div class="question-block">
+                <div class="question-text">12. Lea Marcos 2:1–5. ¿De quién era la fe que el Salvador notó cuando sanó al hombre paralítico?</div>
+                <div class="answer-box">
+                    El pasaje especifica claramente que Jesús, "al ver la fe de ellos", se refirió no solo al paralítico, sino de manera muy especial a la fe colectiva y activa de los cuatro amigos que cargaban el lecho. Ellos hicieron el esfuerzo físico de subir al techo y abrir un boquete para descender al enfermo debido a la multitud, demostrando una confianza inquebrantable en el Salvador.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">13. ¿Qué nos enseña este relato acerca de cómo nuestra fe puede influir en el bienestar de los demás?</div>
+                <div class="answer-box">
+                    Nos enseña que nuestra fe personal no es un asunto estrictamente individual; puede ser un instrumento de salvación y alivio para quienes nos rodean. A través de nuestras oraciones sinceras, nuestro ayuno y el esfuerzo activo por llevar a otros hacia la influencia del Salvador (ejerciendo fe a favor de ellos), podemos abrir las puertas para que reciban bendiciones físicas y el perdón de sus pecados.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">14. Lea Marcos 5:25–34 y determine qué hizo la mujer con el flujo de sangre a fin de demostrar su fe en Jesucristo.</div>
+                <div class="answer-box">
+                    La mujer demostró su fe mediante una acción resuelta y valiente: a pesar de su extrema debilidad física y del impedimento legal y social de mezclarse con la multitud debido a su condición de impureza, se abrió paso entre la gente y tocó con reverencia el borde del manto de Jesús, poseyendo la firme convicción interna de que con solo tocar Su ropa quedaría sana.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">15. De acuerdo con el versículo 34, ¿qué le dijo Jesús a la mujer que la había sanado?</div>
+                <div class="answer-box">
+                    Jesús la miró con amor y le declaró de manera tierna: "Hija, tu fe te ha salvado; ve en paz, y queda sana de tu azote".
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Dallin H. Oaks</span>
+                "Al hacer todo lo que podemos para que un ser querido sane, y después le confiamos al Señor el resultado... La fe radica en Jesucristo, y no depende de los resultados. Debemos recordar que lo que pedimos debe estar de acuerdo con la voluntad del Padre Celestial..."
+                <span class="quote-source">(“Sanar a los enfermos”, Liahona, mayo de 2010, pág. 50).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">16. ¿Qué importantes verdades enseñó el élder Oaks acerca de la fe?</div>
+                <div class="answer-box">
+                    El élder Oaks enseñó que la verdadera fe significa tener una confianza absoluta en el Señor Jesucristo y someterse a Su sabiduría eterna. Explicó que la fe fuerte no es una demanda rígida hacia Dios, sino una convicción tan profunda que no depende exclusivamente del resultado inmediato que nosotros deseamos; la fe verdadera permanece inalterable aun si la respuesta divina es diferente a nuestras expectativas terrenales.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">17. ¿Qué dijo el élder Oaks que se requiere de nosotros cuando oramos con fe para que ocurra un milagro?</div>
+                <div class="answer-box">
+                    Se requiere que hagamos todo lo que esté a nuestro alcance humano (utilizar la mejor atención médica disponible, ejercer el sacerdocio, ayunar) y, acto seguido, depositemos la situación con total humildad en las manos del Señor, confiándole a Él el resultado final bajo la certeza de que Él conoce lo que es mejor para nuestro bienestar eterno.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">18. ¿Por qué es importante recordar que lo que pedimos debe estar de acuerdo con la voluntad del Padre Celestial?</div>
+                <div class="answer-box">
+                    Es crucial porque nuestra perspectiva humana es extremadamente limitada y solo ve el momento presente, mientras que el Padre Celestial posee una visión omnisciente y eterna de nuestro progreso. Si nuestras peticiones no se alinean con Su voluntad, un milagro concedido a la fuerza podría interferir negativamente con nuestro crecimiento espiritual, con el albedrío o con planes eternos perfectos que Dios ha diseñado con amor para nuestra salvación.
+                </div>
+            </div>
+
+            <div class="reading-section">
+                <h3 style="margin-top: 0; color: var(--primary-color);">Lecturas para el alumno</h3>
+                <ul class="reading-list">
+                    <li>• Hechos 10:38; Juan 5:16; Juan 15:18–20; Marcos 2:1–5; Lucas 7:11–15.</li>
+                    <li>• Marcos 5:25–34; Mateo 8:1–4; Lucas 17:11–19.</li>
+                    <li>• Dallin H. Oaks, “Sanar a los enfermos”, Liahona, mayo de 2010, págs. 47–50.</li>
+                </ul>
+                <div class="reading-confirmation">
+                    <span>¿HE COMPLETADO LAS LECTURAS PARA EL ALUMNO?</span>
+                    <span class="status-pill"><strong>SÍ</strong></span>
+                    <span class="status-pill">TODAVÍA</span>
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(2)">Lección anterior</button>
+                <button class="btn-nav btn-success" type="button" onclick="mostrarPagina(4)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-5" class="lesson-page" data-title="Recuperación de Clases - Lección 13 y 14">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 120px; justify-content: flex-end;">
+                    <span class="badge-semana">L-13 y 14</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header">Jesucristo llamó a doce apóstoles</div>
+            <h3 class="topic-subheader">Jesús confirió llaves del sacerdocio a Sus apóstoles</h3>
+
+            <div class="question-block">
+                <div class="question-text">1. Lea Mateo 10:1-8 y Juan 15:16 y responda ¿Qué autoridad confirió Jesucristo a Sus apóstoles?</div>
+                <div class="answer-box">
+                    Jesucristo confirió a Sus apóstoles la autoridad del Santo Sacerdocio, dándoles poder específico sobre los espíritus inmundos para echarlos fuera, y para sanar toda enfermedad y toda dolencia de forma milagrosa. Además, les aclaró que ellos no lo eligieron a Él, sino que Él los eligió y los ordenó para que vayan, lleven fruto duradero y tengan el derecho de pedir al Padre en Su nombre.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. ¿Qué les permitiría hacer esa autoridad?</div>
+                <div class="answer-box">
+                    Esta autoridad les permitiría actuar legalmente en nombre del Salvador para continuar la obra del ministerio. Les daba la facultad de predicar el mensaje de que el reino de los cielos se ha acercado, sanar a los enfermos, limpiar a los leprosos, resucitar a los muertos y expulsar demonios, administrando los dones divinos gratuitamente tal como los habían recibido.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. Complete el principio que está aprendiendo:</div>
+                <div class="answer-box" style="min-height: auto; background-color: #f8fafc;">
+                    Jesús dio a Sus <span class="fill-blank">apóstoles</span> la autoridad del <span class="fill-blank">sacerdocio</span> que les permitiría hacer a <span class="fill-blank">ellos</span> las mismas obras que le habían <span class="fill-blank">visto</span> hacer a su Maestro.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. Lea Mateo 16:15-19 y responda: ¿De qué manera reconoció Pedro la autoridad de Jesús?</div>
+                <div class="answer-box">
+                    Pedro reconoció la autoridad suprema de Jesús mediante una declaración directa y solemne inspirada por revelación divina del Padre Celestial, exclamando con firme convicción: "Tú eres el Cristo, el Hijo del Dios viviente", testificando así de Su carácter mesiánico e identidad divina.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. ¿Qué prometió Jesús que le daría a Pedro?</div>
+                <div class="answer-box">
+                    Jesús le prometió a Pedro que le daría las llaves del reino de los cielos. Con estas llaves de autoridad, todo lo que Pedro atara en la tierra quedaría firmemente atado en los cielos, y todo lo que desatara en la tierra sería ratificado y desatado de igual manera en los cielos, instituyendo el poder sellador.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Profeta José Smith</span>
+                "El Salvador, Moisés y Elías [el Profeta], entregaron las llaves a Pedro, Santiago y Juan en el monte, cuando ellos se transfiguraron ante Él"
+                <span class="quote-source">(Enseñanzas de los Presidentes de la Iglesia: José Smith, 2007, pág. 110).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">6. Lea Mateo 17:1-8 y responda ¿Por qué Moisés y Elías se aparecieron a Pedro, Santiago y Juan?</div>
+                <div class="answer-box">
+                    Se aparecieron en el Monte de la Transfiguración con el propósito específico de conferir y traspasar las llaves del sacerdocio correspondientes a sus respectivas dispensaciones a la presidencia de los doce apóstoles (Pedro, Santiago y Juan), asegurando de esta forma que la autoridad de dirigir la obra y efectuar ordenanzas permaneciera legalmente establecida en la tierra.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Presidente Joseph Fielding Smith</span>
+                "El sacerdocio en general es la autoridad que se da al hombre para actuar en nombre de Dios... Pero es necesario que todo acto que se efectúe bajo esa autoridad se realice en el momento y en el lugar apropiados, en la manera debida y de acuerdo con el orden correcto. El poder de dirigir estos trabajos constituye las llaves del Sacerdocio"
+                <span class="quote-source">(Answers to Gospel Questions, comp. de Joseph Fielding Smith, Jr., 5 tomos, 1957–1966, tomo I, pág. 2).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">7. De acuerdo con la declaración del presidente Joseph Fielding Smith, ¿cuál es la diferencia entre el sacerdocio y las llaves del sacerdocio?</div>
+                <div class="answer-box">
+                    La diferencia radica en que el sacerdocio es la autoridad general que Dios delega al hombre para actuar en Su nombre, mientras que las llaves del sacerdocio constituyen el derecho y el poder específico de presidencia para dirigir, controlar y gobernar la manera, el orden, el lugar y el momento adecuado en que se deben ejercer y efectuar legítimamente los trabajos y ordenanzas bajo esa autoridad.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">8. Según las declaraciones del élder Oaks, ¿quién posee las llaves del sacerdocio hoy en día y quién las ejerce?</div>
+                <div class="answer-box">
+                    Hoy en día, todos los miembros del Quórum de los Doce Apóstoles poseen la totalidad de las llaves del sacerdocio. No obstante, el Presidente de la Iglesia es la única persona en la tierra autorizada para ejercer de forma activa todas y cada una de esas llaves en su plenitud para dirigir la Iglesia, mientras que los presidentes de estaca, obispos y presidentes de quórum ejercen llaves delegadas de forma local dentro de sus respectivos llamamientos.
+                </div>
+            </div>
+
+            <div class="topic-header">La importancia de los doce apóstoles modernos</div>
+
+            <div class="question-block">
+                <div class="question-text">9. Lea Efesios 2:19-20 y Efesios 4:11-14. ¿Qué aprende en esos pasajes acerca de la relación entre la Iglesia del Salvador y los apóstoles y profetas?</div>
+                <div class="answer-box">
+                    Aprendo que la Iglesia está edificada estructuralmente sobre el fundamento indispensable de apóstoles y profetas, siendo Jesucristo mismo la principal piedra del ángulo. Estos oficios no son opcionales, sino que son establecidos de forma divina como la base organizativa y espiritual que sostiene la edificación de los santos y mantiene unida a la comunidad de creyentes.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">10. De acuerdo con Efesios 4:12–14, ¿por qué provee el Salvador profetas y apóstoles a Su Iglesia?</div>
+                <div class="answer-box">
+                    Los provee con el fin de perfeccionar a los santos para la obra del ministerio y para la edificación del cuerpo de Cristo. Su presencia asegura que alcancemos la unidad de la fe y el conocimiento del Hijo de Dios, sirviendo como una protección doctrinal para que los miembros no seamos llevados flotando a la deriva por cualquier viento de doctrina o por las artimañas de hombres engañosos.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">11. ¿Qué verdades u principios enseñan esos pasajes acerca de la Iglesia de Jesucristo?</div>
+                <div class="answer-box">
+                    Enseñan que la verdadera Iglesia de Jesucristo debe contar con una guía profética y apostólica continua para mantener su pureza doctrinal. Un principio fundamental es que mediante el liderazgo divinamente inspirado de apóstoles y profetas, los miembros de la Iglesia son protegidos de los engaños espirituales del mundo y guiados de forma segura hacia la madurez espiritual y la estatura de la plenitud de Cristo.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">12. Lea Doctrina y Convenios 1:38; 21:4-6. ¿Qué promete el Señor a quienes escuchen y sigan las palabras de Sus profetas?</div>
+                <div class="answer-box">
+                    El Señor promete que si seguimos las palabras del profeta con toda paciencia y fe como si vinieran de Su propia boca, las puertas del infierno no prevalecerán contra nosotros, el Señor Dios dispersará los poderes de las tinieblas ante nuestra vista y hará que los cielos se sacudan para nuestro bien y para la gloria de Su nombre.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">13. Al pensar en las bendiciones que el Señor ha prometido, ¿de qué manera el seguir a los profetas del Señor los ha protegido de las tinieblas de este mundo?</div>
+                <div class="answer-box">
+                    Seguir sus consejos me ha servido como un faro moral y una guía segura ante las corrientes ideológicas confusas del mundo contemporáneo. En medio de las presiones de la vida universitaria y social, las amonestaciones de los profetas respecto a la pureza, la integridad, el estudio de las escrituras y la prioridad de la familia me han guardado de cometer errores lamentables, brindándome una profunda paz mental y estabilidad espiritual.
+                </div>
+            </div>
+
+            <div class="topic-header">Jesucristo vino como el Mesías</div>
+            <h3 class="topic-subheader">¿Qué significa la palabra Mesías?</h3>
+
+            <div class="question-block">
+                <div class="question-text">14. ¿Qué significan los títulos Mesías y Cristo?</div>
+                <div class="answer-box">
+                    El título "Mesías" proviene de una palabra aramea y hebrea que significa "el Ungido". Por su parte, la palabra "Cristo" es la forma griega equivalente que posee exactamente el mismo significado. Ambos títulos denotan que Jesucristo fue oficialmente designado, apartado y preordenado en la vida premortal por el Padre Celestial para ser el Rey y Libertador definitivo de la humanidad.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">15. Al buscar en la Guía para el Estudio de las Escrituras bajo el tema "Mesías", ¿por qué muchos judíos rechazaron a Jesús como el Mesías?</div>
+                <div class="answer-box">
+                    Muchos judíos rechazaron a Jesús porque esperaban a un Mesías político y militar que los liberara del yugo opresor del Imperio Romano y restaurara la gloria nacional de Israel. Al presentarse Jesús en una condición de extrema humildad, naciendo en un pesebre y predicando la liberación espiritual del pecado en lugar de una revolución militar terrenal, no cumplió con las expectativas mundanas de los líderes de la época.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">16. Lea Lucas 4:16-22 y busque las profecías del Antiguo Testamento que Jesús citó de Isaías 61:1-2. ¿Qué proclamó Jesús al leer estas palabras?</div>
+                <div class="answer-box">
+                    Al terminar de leer el rollo del profeta Isaías, Jesús proclamó con audacia, solemnidad y majestad ante todos los presentes en la sinagoga de Nazaret: "Hoy se ha cumplido esta Escritura en vuestros oídos", declarando de forma abierta e inequívoca que Él era el Mesías prometido de quien Isaías había profetizado siglos antes.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">17. ¿Qué buenas nuevas (o evangelio) proclamaría el Espíritu del Señor al Mesías que sanaría a los quebrantados de corazón?</div>
+                <div class="answer-box">
+                    Las buenas nuevas consisten en el mensaje de que el cautiverio espiritual ha terminado y que hay esperanza y redención real para toda el alma afligida. El Mesías proclamaría que por medio de Su sacrificio expiatorio hay consuelo divino para los que sufren, liberación para los oprimidos por las cadenas del diablo, restauración de la vista espiritual y la llegada del año aceptable del Señor.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">18. ¿A quiénes predicaría el Evangelio?</div>
+                <div class="answer-box">
+                    Predicaría el Evangelio principalmente a los pobres, a los quebrantados de corazón, a los cautivos, a los ciegos y a los oprimidos. Esto abarca tanto a quienes padecían necesidades físicas y exclusión social en la tierra, como a todos aquellos que se reconocen espiritualmente necesitados, humildes y listos para recibir la verdad divina.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">19. ¿A quiénes sanaría?</div>
+                <div class="answer-box">
+                    Sanaría a los quebrantados de corazón, restaurando la salud y el equilibrio emocional y espiritual de aquellos cuyas almas han sido heridas por el sufrimiento, la injusticia o el pecado, demostrando un tierno cuidado por la condición interna humana.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">20. ¿A quiénes proclamaría libertad?</div>
+                <div class="answer-box">
+                    Proclamaría libertad a los cautivos, lo cual posee un doble cumplimiento: la liberación de las almas encadenadas por los lazos del pecado y las adicciones en la mortalidad, y la apertura de las prisiones espirituales en el mundo de los espíritus para los miles de fallecidos que aguardaban la redención.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">21. ¿Qué creen que quiso decir Jesús al declarar: "el Espíritu del Señor está sobre mí" y "hoy se ha cumplido esta Escritura en vuestros oídos"?</div>
+                <div class="answer-box">
+                    Quiso decir que Su ministerio terrenal estaba plenamente respaldado, sellado y ungido por el poder de la Trinidad, y que las promesas de salvación largamente esperadas por los profetas de la antigüedad ya no eran eventos de un futuro lejano; estaban aconteciendo en ese mismo instante en carne propia ante los ojos y oídos de la congregación a través de Su presencia física.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">22. ¿De qué forma cumplió Jesús la profecía de Isaías que Él citó (véanse los versículos 18-19)?</div>
+                <div class="answer-box">
+                    La cumplió a lo largo de todo Su ministerio al andar haciendo bienes: perdonando los pecados de los contritos, devolviendo la vista a los ciegos físicos y espirituales, sanando a los enfermos, expulsando demonios y enseñando sermones llenos de esperanza. El cumplimiento culminante se alcanzó mediante Su Expiación y Resurrección, rompiendo permanentemente las ligaduras de la muerte y del infierno para toda la humanidad.
+                </div>
+            </div>
+
+            <div class="topic-header">Análisis y Testimonio del Mesías prometido</div>
+
+            <div class="question-block">
+                <div class="question-text">23. Elija una o dos de la lista de escrituras y compara y contrastan los pasajes que has elegido, piensa en la razón por la que éstos están agrupados de esa manera y lo que enseñan de Jesucristo.</div>
+                <div class="answer-box">
+                    He analizado el grupo de <strong>Miqueas 5:2 y Lucas 2:4-7</strong>. Estos pasajes están agrupados de esta manera porque demuestran la maravillosa correlación entre una profecía del Antiguo Testamento y su cumplimiento literal en el Nuevo Testamento. Miqueas, con siglos de anticipación, profetizó que de Belén Efrata saldría el Señor que sería el Señor en Israel; Lucas registra la exactitud histórica de cómo José y María viajaron a Belén debido al censo, naciendo allí el Salvador en un pesebre. Esto enseña que los designios de Dios son perfectos, que Su conocimiento abarca los tiempos y que Jesús es verdaderamente el Mesías prometido, cuyas circunstancias de nacimiento fueron detalladamente orquestadas por la providencia divina.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">24. Lea Lucas 4:28-29 responda ¿Cómo reaccionó a la declaración de Jesús la gente que se encontraba en la sinagoga en Nazaret?</div>
+                <div class="answer-box">
+                    La reacción de la gente fue de una profunda indignación e ira desmedida. Al escuchar Sus palabras, todos en la sinagoga se llenaron de furor, se levantaron apresuradamente, echaron a Jesús fuera de la ciudad de Nazaret y lo llevaron hasta la cumbre del monte sobre el que estaba edificada la ciudad con la perversa e inmediata intención de despeñarlo.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">25. Imagínese que son parte del relato al leer Mateo 21:1-11. ¿Por qué el pueblo de Jerusalén respondió de la forma en que lo hizo? ¿Cómo crees que habrías reaccionado Tú?</div>
+                <div class="answer-box">
+                    El pueblo de Jerusalén respondió con gran júbilo, aclamaciones y reverencia porque reconocían en los milagros previos de Jesús el cumplimiento de la profecía de Zacarías sobre la entrada triunfal del Rey de Sion cabalgando sobre un pollino. Ellos tendieron sus mantos y ramas de árboles en el camino, gritando "¡Hosanna al Hijo de David!". Si yo hubiera estado allí, me habría unido con reverencia y lágrimas de gozo a la multitud, rindiendo homenaje al Maestro y testificando en voz alta de Su divinidad, maravillado por tener el sagrado privilegio de presenciar al tan largamente esperado Redentor entrar a la ciudad santa.
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(3)">Lección anterior</button>
+                <button class="btn-nav btn-success" type="button" onclick="mostrarPagina(5)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-6" class="lesson-page" data-title="Recuperación de Clases - Lección 15 y 16">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombre:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 120px; justify-content: flex-end;">
+                    <span class="badge-semana">L-15 y 16</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Recuperación de Clases</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header">Jesucristo instituyó la Santa Cena</div>
+            <h3 class="topic-subheader">Jesucristo estableció un nuevo convenio</h3>
+
+            <div class="question-block">
+                <div class="question-text">1. Leer Mateo 26:26-28. Sabiendo que la palabra testamento fue traducida de una palabra griega que significa "convenio", si Jesús estaba instituyendo un nuevo convenio, explica ¿qué convenio reemplazaría y por qué?</div>
+                <div class="answer-box">
+                    El nuevo convenio instituido por Jesucristo reemplazaría formalmente al antiguo convenio mosaico (la Ley de Moisés). Este cambio era necesario porque la ley mosaica, con sus estrictos ritos temporales y sacrificios de animales, ya había cumplido su propósito profético de señalar el camino hacia el Mesías. El sacrificio supremo y voluntario de Cristo en la cruz inauguró una ley superior basada en la gracia y el cambio interior del corazón.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">2. En la antigüedad, Moisés ofreció un sacrificio animal, tomó la sangre y la roció sobre el pueblo (Éxodo 24:3-8). ¿En qué centra nuestra atención el ofrecimiento de sangre tanto en el antiguo como en el nuevo convenio?</div>
+                <div class="answer-box">
+                    El ofrecimiento de sangre en ambos convenios centra nuestra atención de manera inequívoca en el principio de la expiación, la remisión de los pecados y el carácter sagrado de los lazos que unían al pueblo con la Deidad. Mientras que en el antiguo convenio la sangre de animales simbolizaba una purificación externa y un recordatorio de la promesa de redención futura, en el nuevo convenio la sangre de Cristo representa el cumplimiento real, puro y definitivo que limpia las almas desde el interior.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Dallin H. Oaks</span>
+                "La Santa Cena es la ordenanza que reemplaza los sacrificios de sangre y los holocaustos de la ley mosaica, y con ella se recibió la promesa del Salvador: Y al que venga a mí con un corazón quebrantado y un espíritu contrito, lo bautizaré con fuego y con el Espíritu Santo..."
+                <span class="quote-source">(“La reunión sacramental y la Santa Cena”, Liahona, noviembre de 2008, pág. 19).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">3. ¿En qué forma resumirían las verdades que hasta ahora hemos analizado con respecto a la Última Cena?</div>
+                <div class="answer-box">
+                    Podemos resumir que la Última Cena marcó el fin oficial de las ordenanzas de sacrificios de sangre del convenio mosaico y dio inicio al nuevo convenio eterno. A través de la Santa Cena, el Salvador estableció un recordatorio sagrado y accesible de Su cuerpo roto y Su sangre derramada, invitándonos a presentarnos ante Él con un corazón quebrantado y un espíritu contrito a cambio de la compañía constante del Espíritu Santo.
+                </div>
+            </div>
+
+            <div class="topic-header">La expiación de Jesucristo nos brinda Su gracia</div>
+            <h3 class="topic-subheader">La terrible aritmética de la Expiación</h3>
+
+            <div class="quote-box">
+                <span class="quote-author">Élder Neal A. Maxwell</span>
+                "...cuando la angustia le sobrevino en toda su intensidad, era mucho, muchísimo peor de lo que aun Él, con su intelecto inigualable, pudo haber imaginado... El peso acumulado de todos los pecados terrenales, pasados, presentes y futuros, cayó con toda su fuerza sobre aquella alma perfecta, inmaculada y sensible. De alguna manera, todas nuestras dolencias y enfermedades también formaron parte de la terrible aritmética de la Expiación..."
+                <span class="quote-source">(“Dispuestos a someternos”, Liahona, julio de 1985, págs. 69-70).</span>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">4. ¿Qué piensan que el Élder Maxwell quiso decir con "la terrible aritmética de la Expiación"?</div>
+                <div class="answer-box">
+                    Con esta frase, el élder Maxwell se refirió a la incomprensible, abrumadora e infinita suma de sufrimiento que el Salvador experimentó. No se trató de un dolor genérico o abstracto, sino de la acumulación matemática exacta, individual y simultánea de cada pecado, cada culpa, cada remordimiento, dolor, enfermedad y angustia de todos los seres humanos que han vivido y vivirán en la tierra, multiplicados por la sensibilidad perfecta de Su alma inmaculada.
+                </div>
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">5. Además de nuestros pecados, ¿qué otra cosa menciona el Élder Maxwell que contribuyó al padecimiento del Salvador?</div>
+                <div class="answer-box">
+                    El élder Maxwell menciona de forma explícita que todas nuestras flaquezas, dolencias personales, dolores físicos y enfermedades mortales también formaron parte directa de esa terrible ecuación de sufrimiento, cayendo con todo su peso sobre el Salvador en el jardín de Getsemaní y en la cruz.
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <span class="quote-author">2 Corintios 5:21</span>
+                "Al que no conoció pecado, por nosotros lo hizo pecado, para que nosotros fuésemos hechos justicia de Dios en él."
+            </div>
+
+            <div class="question-block">
+                <div class="question-text">6. Basándose en las escrituras y citas analizadas, ¿cómo resumirían el propósito supremo de la Expiación de Jesucristo en sus vidas?</div>
+                <div class="answer-box">
+                    El propósito supremo de la Expiación es llevar a cabo una maravillosa e infinita reconciliación entre nosotros y Dios. Consiste en que el Salvador voluntariamente tomó sobre Sí nuestras culpas y dolores para ofrecernos a cambio Su gracia, Su rectitud y Su poder habilitador, permitiéndonos vencer tanto el pecado como las debilidades de la mortalidad para transformarnos en seres limpios y justificados ante el Padre Celestial.
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(4)">Lección anterior</button>
+                <button class="btn-nav btn-primary" type="button" onclick="mostrarPagina(6)">Siguiente lección</button>
+            </div>
+        </section>
+
+        <section id="pagina-7" class="lesson-page" data-title="Experiencia con Elevar el Aprendizaje - Religión 250">
+            <div class="header-fields">
+                <div class="field-group">
+                    <label>Nombres y Apellidos:</label>
+                    <div class="line">Elias Efrain Manchego Navarro</div>
+                </div>
+                <div class="field-group" style="flex: 0 0 150px; justify-content: flex-end;">
+                    <span class="badge-semana">RELIGIÓN 250</span>
+                </div>
+            </div>
+
+            <div class="title-section">
+                <p class="subtitle">Experiencia con Elevar el Aprendizaje</p>
+                <h1 class="main-title">JESUCRISTO Y EL EVANGELIO SEMPITERNO</h1>
+            </div>
+
+            <div class="topic-header" style="text-transform: uppercase; letter-spacing: 1px;">Cuestionario de Evaluación Final</div>
+
+            <div class="question-block" style="margin: 30px 0;">
+                <div class="question-text" style="font-size: 1.05rem; color: var(--primary-dark); border-left: 4px solid var(--primary-color); padding-left: 10px;">1. ¿Qué puedo aprender del Salvador sobre obedecer la voluntad del Padre Celestial?</div>
+                <div class="answer-box" style="min-height: 150px; padding: 15px; font-size: 0.98rem; line-height: 1.7;">
+                    Del Salvador puedo aprender que la obediencia fiel no es una imposición restrictiva, sino la máxima expresión de amor, confianza y sumisión voluntaria hacia el Padre Celestial. A lo largo de Su vida mortal, Cristo demostró una alineación perfecta con los designios divinos, culminando en el huerto de Getsemaní y en la cruz, donde subordinó Sus propios padecimientos físicos y emocionales exclamando: "No se haga mi voluntad, sino la tuya". Su ejemplo me enseña que la verdadera rectitud consiste en priorizar los propósitos eternos de Dios por encima de mis comodidades personales, temores temporales o ambiciones mundanas. Esta obediencia incondicional expande nuestra libertad espiritual y nos capacita para ser instrumentos eficaces en Su obra.
+                </div>
+            </div>
+
+            <div class="question-block" style="margin: 30px 0;">
+                <div class="question-text" style="font-size: 1.05rem; color: var(--primary-dark); border-left: 4px solid var(--primary-color); padding-left: 10px;">2. ¿Por qué necesito al Salvador?</div>
+                <div class="answer-box" style="min-height: 150px; padding: 15px; font-size: 0.98rem; line-height: 1.7;">
+                    Necesito vitalmente al Salvador porque soy un ser mortal propenso al error, a las debilidades físicas y al pecado, condiciones que me apartarían permanentemente de la presencia de Dios debido a las leyes inflexibles de la justicia divina. Sin el sacrificio expiatorio y voluntario de Jesucristo, me sería imposible limpiar mis transgresiones, sanar mis heridas espirituales o romper las ligaduras de la muerte física. Lo necesito no solo para alcanzar el perdón y la salvación final mediante Su gracia justificadora, sino también en mi día a día universitario y personal, requiriendo Su poder habilitador para fortalecer mi carácter, hallar paz mental ante la incertidumbre y adquirir la resiliencia necesaria para superar los desafíos cotidianos que exceden mis propias capacidades humanas.
+                </div>
+            </div>
+
+            <div class="question-block" style="margin: 30px 0;">
+                <div class="question-text" style="font-size: 1.05rem; color: var(--primary-dark); border-left: 4px solid var(--primary-color); padding-left: 10px;">3. ¿Qué he aprendido en este curso sobre Jesucristo y el Evangelio sempiterno que haya bendecido mi vida?</div>
+                <div class="answer-box" style="min-height: 150px; padding: 15px; font-size: 0.98rem; line-height: 1.7;">
+                    Este curso ha bendecido profundamente mi vida al brindarme una perspectiva mucho más amplia, estructurada y majestuosa de la misión premortal, mortal y eterna del Redentor. Comprender que Su Evangelio es un plan eterno establecido antes de la fundación del mundo me da un sólido sentido de propósito e identidad. Estudiar minuciosamente Su vida libre de pecado, Sus milagros impulsados por una compasión genuina, la delegación legal de las llaves del sacerdocio a Sus apóstoles y la "terrible aritmética" de Su Expiación ha fortalecido de forma inmensurable mi fe y mi testimonio personal. Saber que Él comprende cada una de mis dolencias individuales me inspira a acudir a Él con mayor confianza, permitiéndome afrontar mis responsabilidades académicas y metas futuras con una paz interior inamovible.
+                </div>
+            </div>
+
+            <div class="navigation-footer">
+                <button class="btn-nav btn-secondary" type="button" onclick="mostrarPagina(5)">Lección anterior</button>
+                <button class="btn-nav btn-success" type="button" onclick="mostrarPagina(0)">Volver al inicio</button>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function mostrarPagina(indice) {
+            const paginas = Array.from(document.querySelectorAll('.lesson-page'));
+            if (indice < 0 || indice >= paginas.length) {
+                return;
+            }
+
+            paginas.forEach(function (pagina, posicion) {
+                const activa = posicion === indice;
+                pagina.classList.toggle('is-active', activa);
+            });
+
+            const paginaActiva = paginas[indice];
+            const etiqueta = document.getElementById('progressLabel');
+
+            if (paginaActiva) {
+                document.title = paginaActiva.dataset.title;
+                etiqueta.textContent = 'Página ' + (indice + 1) + ' de ' + paginas.length;
+                if (paginaActiva.id) {
+                    window.location.hash = paginaActiva.id;
+                }
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const paginas = Array.from(document.querySelectorAll('.lesson-page'));
+            const hashActual = window.location.hash.replace('#', '');
+            const indiceInicial = paginas.findIndex(function (pagina) {
+                return pagina.id === hashActual;
+            });
+
+            mostrarPagina(indiceInicial >= 0 ? indiceInicial : 0);
+        });
+    </script>
+</body>
+</html>
