@@ -1,0 +1,103 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: readuls_postgres
+    environment:
+      POSTGRES_DB: readuls
+      POSTGRES_USER: readuls
+      POSTGRES_PASSWORD: readuls123
+    ports:
+      - "5435:5432"
+    volumes:
+      - readuls_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U readuls"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo:7
+    container_name: readuls_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - readuls_mongo_data:/data/db
+    restart: unless-stopped
+
+  # Almacenamiento de objetos S3-compatible (reemplazo autohospedado de AWS S3).
+  minio:
+    image: minio/minio
+    container_name: readuls_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"   # API S3
+      - "9001:9001"   # consola web
+    volumes:
+      - readuls_minio_data:/data
+    restart: unless-stopped
+
+  # Crea el bucket y lo deja de lectura pública anónima; corre una vez y termina.
+  minio-init:
+    image: minio/mc
+    container_name: readuls_minio_init
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 minioadmin minioadmin123; do sleep 1; done;
+      mc mb --ignore-existing local/readuls;
+      mc anonymous set download local/readuls;
+      echo 'MinIO: bucket readuls listo (descarga pública)';
+      "
+    restart: "no"
+
+  backend:
+    build: ./backend
+    container_name: readuls_backend
+    # Carga OAuth + FLASK_SECRET_KEY del .env; las URLs de BD se sobreescriben
+    # abajo para apuntar a los contenedores (no a localhost).
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_URL: postgresql://readuls:readuls123@postgres:5432/readuls
+      MONGO_URL: mongodb://mongodb:27017
+      MONGO_DB: readuls
+      FRONTEND_URL: http://localhost:8080
+      GOOGLE_REDIRECT_URI: http://localhost:5000/oauth/callback
+      # Almacenamiento MinIO: endpoint interno para subir, URL pública para el navegador.
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin123
+      AWS_S3_BUCKET: readuls
+      AWS_S3_REGION: us-east-1
+      AWS_S3_ENDPOINT: http://minio:9000
+      AWS_S3_PUBLIC_URL: http://localhost:9000
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    container_name: readuls_frontend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  readuls_postgres_data:
+  readuls_mongo_data:
+  readuls_minio_data:

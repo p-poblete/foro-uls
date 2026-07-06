@@ -1,19 +1,13 @@
 # To-Do
 
 ## Base de Datos
-- [ ] Roles de usuario
+- [ ] Ejemplo...
 
 ## Backend
-- [ ] Búsqueda por coincidencia
-- [ ] Sistema de recomendación
-- [ ] Roles de usuario
+- [ ] Ejemplo...
 
 ## Frontend
-- [X] Realizar Mockup's iniciales
-- [ ] Modificar colores e identidad
+- [ ] Realizar Mockup's iniciales
 
 ## General
-- [X] Formalizar Requerimientos Funcionales
-- [ ] Completar README principal
-- [ ] Subir documentos formales
-- [ ] Centralizar avances en la rama main
+- [ ] Formalizar Requerimientos Funcionales

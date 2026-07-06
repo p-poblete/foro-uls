@@ -1,0 +1,12 @@
+# Normaliza los saltos de línea a LF en el repo (evita ruido CRLF en Windows).
+* text=auto eol=lf
+
+# Binarios: no tocar.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+bun.lock -diff
