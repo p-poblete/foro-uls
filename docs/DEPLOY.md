@@ -9,7 +9,7 @@ y al final actualizar el OAuth de Google con las URLs reales.
 | Componente         | Plataforma            | Notas |
 |--------------------|-----------------------|-------|
 | Frontend (SSR)     | Cloudflare Workers    | El build ya emite `.output/server/wrangler.json`. |
-| Backend (Flask)    | Koyeb (Free Web)      | Construye `backend/Dockerfile` (gunicorn). |
+| Backend (Flask)    | Render (Free Web)     | Construye `backend/Dockerfile` (gunicorn). |
 | PostgreSQL         | Neon                  | `?sslmode=require` en la URL. |
 | MongoDB            | MongoDB Atlas (M0)    | Cadena SRV. |
 | Imágenes           | Cloudflare R2         | S3-compatible; `storage.py` ya lo soporta. |
@@ -29,7 +29,7 @@ Todas las variables están documentadas en `backend/.env.example` y
 ## 2. MongoDB — Atlas M0
 
 1. Crea un cluster **M0 (Free)** en <https://cloud.mongodb.com>.
-2. En *Network Access* añade `0.0.0.0/0` (Koyeb no da IP fija).
+2. En *Network Access* añade `0.0.0.0/0` (Render no da IP saliente fija).
 3. En *Database Access* crea un usuario y copia la cadena SRV
    (`mongodb+srv://user:pass@cluster.xxx.mongodb.net`).
 4. Guárdala para `MONGO_URL`. `MONGO_DB=readuls`.
@@ -57,14 +57,16 @@ AWS_S3_PUBLIC_URL=https://pub-xxxx.r2.dev
 > `AWS_S3_PUBLIC_URL` **no** lleva el nombre del bucket: en R2 el dominio público
 > ya está ligado al bucket. La URL final se arma como `AWS_S3_PUBLIC_URL/<key>`.
 
-## 4. Backend — Koyeb
+## 4. Backend — Render
 
-1. <https://app.koyeb.com> → **Create Web Service** → *GitHub* → este repo.
-2. Builder: **Dockerfile**. *Work directory* / contexto: `backend`
-   (Dockerfile: `backend/Dockerfile`).
-3. *Ports*: expón el puerto que Koyeb inyecta en `$PORT` (por defecto 8000);
-   el Dockerfile hace `--bind 0.0.0.0:$PORT`. Health check: `/` (ya responde `ok`).
-4. *Environment variables* (marca como *Secret* las sensibles):
+Free Web Service, sin tarjeta. Duerme tras 15 min de inactividad → la primera
+petición tras dormir tarda ~30-60s (arranque en frío); luego responde normal.
+
+1. <https://dashboard.render.com> → **New → Web Service** → conecta este repo de GitHub.
+2. *Runtime*: **Docker**. *Root Directory*: `backend` (Render usa `backend/Dockerfile`).
+3. *Instance Type*: **Free**. Render inyecta `$PORT` (10000) y el Dockerfile hace
+   `--bind 0.0.0.0:$PORT`. Health check path: `/` (ya responde `ok`).
+4. *Environment variables* (Render las cifra; no marques nada extra):
 
    ```
    POSTGRES_URL=postgresql://...neon.tech/readuls?sslmode=require
@@ -74,7 +76,7 @@ AWS_S3_PUBLIC_URL=https://pub-xxxx.r2.dev
    ALLOWED_EMAIL_DOMAIN=ulasalle.edu.pe
    GOOGLE_CLIENT_ID=<...>
    GOOGLE_CLIENT_SECRET=<...>
-   GOOGLE_REDIRECT_URI=https://<tu-backend>.koyeb.app/oauth/callback
+   GOOGLE_REDIRECT_URI=https://<tu-backend>.onrender.com/oauth/callback
    FRONTEND_URL=https://<tu-frontend>.workers.dev
    # + las 6 variables AWS_S3_* del paso 3
    ```
@@ -82,7 +84,7 @@ AWS_S3_PUBLIC_URL=https://pub-xxxx.r2.dev
    `GOOGLE_REDIRECT_URI` y `FRONTEND_URL` necesitan las URLs finales: puedes
    desplegar primero con valores provisionales y actualizarlos al terminar.
 5. Deploy. El contenedor corre `seed.py` (idempotente) y luego gunicorn.
-   Anota la URL pública, ej. `https://readuls-xxx.koyeb.app`.
+   Anota la URL pública, ej. `https://readuls-xxx.onrender.com`.
 
 ## 5. Frontend — Cloudflare Workers
 
@@ -93,7 +95,7 @@ antes de compilar.
 
 ```bash
 cd frontend
-echo 'VITE_API_BASE_URL=https://<tu-backend>.koyeb.app' >  .env
+echo 'VITE_API_BASE_URL=https://<tu-backend>.onrender.com' >  .env
 echo 'VITE_APP_NAME=HablaLaSalle'                        >> .env
 bun install
 bunx wrangler login      # una vez
@@ -110,10 +112,10 @@ directory* `frontend`, build command `bun run build`, y define
 
 En <https://console.cloud.google.com/apis/credentials> → tu cliente OAuth:
 
-- **Authorized redirect URIs**: `https://<tu-backend>.koyeb.app/oauth/callback`
+- **Authorized redirect URIs**: `https://<tu-backend>.onrender.com/oauth/callback`
 - **Authorized JavaScript origins**: `https://<tu-frontend>.workers.dev`
 
-Luego actualiza en Koyeb `GOOGLE_REDIRECT_URI` y `FRONTEND_URL` con las URLs
+Luego actualiza en Render `GOOGLE_REDIRECT_URI` y `FRONTEND_URL` con las URLs
 finales si usaste provisionales, y redeploy el backend.
 
 ---
@@ -126,7 +128,7 @@ finales si usaste provisionales, y redeploy el backend.
 
 ## Notas
 
-- Koyeb Free puede dormir tras inactividad → primera petición con arranque frío.
+- Render Free duerme tras 15 min de inactividad → primera petición ~30-60s en frío.
 - Cambiar `VITE_API_BASE_URL` requiere **recompilar** el frontend, no solo
   reiniciar.
 - El `docker-compose.yml` sigue siendo para desarrollo local; producción no lo usa.
