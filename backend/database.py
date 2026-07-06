@@ -1,3 +1,5 @@
+import os
+
 from flask_sqlalchemy import SQLAlchemy
 from pymongo import MongoClient
 
@@ -11,7 +13,10 @@ _mongo_db = None
 def init_mongo(app):
     """Inicializa la conexión a MongoDB y crea índices básicos."""
     global _mongo_db
-    client = MongoClient(app.config["MONGO_URL"], serverSelectionTimeoutMS=2000)
+    # Default 10s: Atlas (SRV + TLS al replica set) puede tardar >2s en frío.
+    # Baja MONGO_TIMEOUT_MS en local si prefieres que el arranque sin Mongo falle rápido.
+    timeout_ms = int(os.getenv("MONGO_TIMEOUT_MS", "10000"))
+    client = MongoClient(app.config["MONGO_URL"], serverSelectionTimeoutMS=timeout_ms)
     _mongo_db = client[app.config["MONGO_DB"]]
 
     # Índices para la colección de comentarios.

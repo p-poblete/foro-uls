@@ -51,10 +51,15 @@ def upload_image(file, prefix="uploads"):
         code = getattr(exc, "response", {}).get("Error", {}).get("Code", "StorageError")
         return None, f"Error subiendo imagen ({code})"
 
+    # Regla única: público = base + key. AWS_S3_PUBLIC_URL es una base ya ligada al
+    # bucket (dominio r2.dev/propio de R2, o host/bucket de MinIO), así que solo se
+    # le añade la key. Sin público pero con endpoint, se usa path-style host/bucket/key.
+    public = os.getenv("AWS_S3_PUBLIC_URL")
     endpoint = os.getenv("AWS_S3_ENDPOINT")
-    if endpoint:
-        base = (os.getenv("AWS_S3_PUBLIC_URL") or endpoint).rstrip("/")
-        url = f"{base}/{bucket}/{key}"
+    if public:
+        url = f"{public.rstrip('/')}/{key}"
+    elif endpoint:
+        url = f"{endpoint.rstrip('/')}/{bucket}/{key}"
     else:
         url = f"https://{bucket}.s3.{region}.amazonaws.com/{key}"
     return url, None

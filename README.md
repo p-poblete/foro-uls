@@ -28,7 +28,8 @@ docker compose up -d --build
 - Consola MinIO → http://localhost:9001
 
 Para el modo nativo (backend/frontend a mano) y más detalle, ver
-[DESARROLLO.md](DESARROLLO.md).
+[DESARROLLO.md](docs/DESARROLLO.md). Para publicarlo en línea (Cloudflare + Koyeb +
+Neon + Atlas + R2, todo gratis), ver [DEPLOY.md](docs/DEPLOY.md).
 
 ## Estructura
 
