@@ -1,6 +1,7 @@
 import re
-from flask import Blueprint, request, jsonify
-from models import Community, User, db
+from flask import Blueprint, request, jsonify, g
+from models import Community, db
+from auth_utils import require_auth, forbid_unless_owner
 from datetime import datetime, timezone
 
 communities_bp = Blueprint("communities", __name__)
@@ -29,14 +30,11 @@ def get_community(community_id):
 
 # create a new community
 @communities_bp.route("/communities", methods=["POST"])
+@require_auth
 def create_community():
-    data = request.get_json()
-    if not data or not data.get("name") or not data.get("owner_id"):
-        return jsonify({"error": "name y owner_id son obligatorios"}), 400
-
-    owner = User.query.filter_by(id=data["owner_id"], deleted_at=None).first()
-    if not owner:
-        return jsonify({"error": "El usuario owner_id no existe"}), 404
+    data = request.get_json() or {}
+    if not data.get("name"):
+        return jsonify({"error": "name es obligatorio"}), 400
 
     slug = data.get("slug") or slugify(data["name"])
 
@@ -49,7 +47,7 @@ def create_community():
         name=data["name"],
         slug=slug,
         description=data.get("description"),
-        owner_id=data["owner_id"],
+        owner_id=g.current_user.id,  # ownership: el creador es el dueño
         visibility=data.get("visibility", "public"),
     )
     db.session.add(community)
@@ -59,10 +57,13 @@ def create_community():
 
 # update community
 @communities_bp.route("/communities/<int:community_id>", methods=["PUT"])
+@require_auth
 def update_community(community_id):
     community = Community.query.filter_by(id=community_id, deleted_at=None).first()
     if not community:
         return jsonify({"error": "Comunidad no encontrada"}), 404
+    if (resp := forbid_unless_owner(community.owner_id)):
+        return resp
 
     data = request.get_json() or {}
     if "description" in data:
@@ -82,10 +83,13 @@ def update_community(community_id):
 
 # delete community (soft delete)
 @communities_bp.route("/communities/<int:community_id>", methods=["DELETE"])
+@require_auth
 def delete_community(community_id):
     community = Community.query.filter_by(id=community_id, deleted_at=None).first()
     if not community:
         return jsonify({"error": "Comunidad no encontrada"}), 404
+    if (resp := forbid_unless_owner(community.owner_id)):
+        return resp
 
     community.deleted_at = datetime.now(timezone.utc)
     community.status = "archived"

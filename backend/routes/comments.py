@@ -1,5 +1,6 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from database import get_mongo
+from auth_utils import require_auth, forbid_unless_owner
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime, timezone
@@ -77,10 +78,11 @@ def get_comment(comment_id):
 
 # create a new comment (root or reply)
 @comments_bp.route("/posts/<int:post_id>/comments", methods=["POST"])
+@require_auth
 def create_comment(post_id):
-    data = request.get_json()
-    if not data or not data.get("author_id") or not data.get("content"):
-        return jsonify({"error": "author_id y content son obligatorios"}), 400
+    data = request.get_json() or {}
+    if not data.get("content"):
+        return jsonify({"error": "content es obligatorio"}), 400
 
     mongo = get_mongo()
     parent_id = None
@@ -99,7 +101,7 @@ def create_comment(post_id):
     now = datetime.now(timezone.utc)
     comment = {
         "post_id":    post_id,
-        "author_id":  data["author_id"],
+        "author_id":  g.current_user.id,  # ownership: autor = usuario autenticado
         "parent_id":  parent_id,
         "depth":      depth,
         "content":    data["content"],
@@ -122,6 +124,7 @@ def create_comment(post_id):
 
 # update comment
 @comments_bp.route("/comments/<string:comment_id>", methods=["PUT"])
+@require_auth
 def update_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
@@ -135,6 +138,8 @@ def update_comment(comment_id):
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
         return jsonify({"error": "Comentario no encontrado"}), 404
+    if (resp := forbid_unless_owner(comment.get("author_id"))):
+        return resp
 
     mongo.comments.update_one(
         {"_id": oid},
@@ -146,6 +151,7 @@ def update_comment(comment_id):
 
 # delete comment (soft delete)
 @comments_bp.route("/comments/<string:comment_id>", methods=["DELETE"])
+@require_auth
 def delete_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
@@ -155,6 +161,8 @@ def delete_comment(comment_id):
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
         return jsonify({"error": "Comentario no encontrado"}), 404
+    if (resp := forbid_unless_owner(comment.get("author_id"))):
+        return resp
 
     mongo.comments.update_one(
         {"_id": oid},
@@ -165,6 +173,7 @@ def delete_comment(comment_id):
 
 # vote a comment
 @comments_bp.route("/comments/<string:comment_id>/vote", methods=["POST"])
+@require_auth
 def vote_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:

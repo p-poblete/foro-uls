@@ -1,7 +1,8 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from models import Post, PostVote, Community, User, db
 from database import get_mongo
 from storage import upload_image
+from auth_utils import require_auth, forbid_unless_owner
 from datetime import datetime, timezone
 
 posts_bp = Blueprint("posts", __name__)
@@ -75,20 +76,17 @@ def get_post(post_id):
 
 # create a new post
 @posts_bp.route("/posts", methods=["POST"])
+@require_auth
 def create_post():
     data = request.get_json(silent=True) if request.is_json else request.form.to_dict()
     file = request.files.get("image")
 
-    if not data or not data.get("community_id") or not data.get("author_id") or not data.get("title"):
-        return jsonify({"error": "community_id, author_id y title son obligatorios"}), 400
+    if not data or not data.get("community_id") or not data.get("title"):
+        return jsonify({"error": "community_id y title son obligatorios"}), 400
 
     community = Community.query.filter_by(id=data["community_id"], deleted_at=None).first()
     if not community:
         return jsonify({"error": "Comunidad no encontrada"}), 404
-
-    author = User.query.filter_by(id=data["author_id"], deleted_at=None).first()
-    if not author:
-        return jsonify({"error": "Usuario autor no encontrado"}), 404
 
     # La imagen puede venir como archivo multipart o como URL ya subida (/api/uploads).
     image_url = data.get("image_url")
@@ -100,7 +98,7 @@ def create_post():
 
     post = Post(
         community_id=data["community_id"],
-        author_id=data["author_id"],
+        author_id=g.current_user.id,  # ownership: el autor es el usuario autenticado
         title=data["title"],
         content=data.get("content"),
         label=data.get("label"),
@@ -115,10 +113,13 @@ def create_post():
 
 # update post
 @posts_bp.route("/posts/<int:post_id>", methods=["PUT"])
+@require_auth
 def update_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
         return jsonify({"error": "Post no encontrado"}), 404
+    if (resp := forbid_unless_owner(post.author_id)):
+        return resp
 
     data = request.get_json() or {}
     if "title" in data:
@@ -140,10 +141,13 @@ def update_post(post_id):
 
 # delete post (soft delete)
 @posts_bp.route("/posts/<int:post_id>", methods=["DELETE"])
+@require_auth
 def delete_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
         return jsonify({"error": "Post no encontrado"}), 404
+    if (resp := forbid_unless_owner(post.author_id)):
+        return resp
 
     post.deleted_at = datetime.now(timezone.utc)
     post.status = "removed"
@@ -151,12 +155,13 @@ def delete_post(post_id):
     return jsonify({"message": "Post eliminado", "post": post.to_dict()})
 
 
-# vote a post 
+# vote a post
 @posts_bp.route("/posts/<int:post_id>/vote", methods=["POST"])
+@require_auth
 def vote_post(post_id):
-    data = request.get_json()
-    if not data or "user_id" not in data or "vote_type" not in data:
-        return jsonify({"error": "user_id y vote_type (1 o -1) son obligatorios"}), 400
+    data = request.get_json() or {}
+    if "vote_type" not in data:
+        return jsonify({"error": "vote_type (1 o -1) es obligatorio"}), 400
     if data["vote_type"] not in (1, -1):
         return jsonify({"error": "vote_type debe ser 1 (upvote) o -1 (downvote)"}), 400
 
@@ -164,13 +169,10 @@ def vote_post(post_id):
     if not post:
         return jsonify({"error": "Post no encontrado"}), 404
 
-    user = User.query.filter_by(id=data["user_id"], deleted_at=None).first()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
+    user_id = g.current_user.id  # el votante es el usuario autenticado
     vote_type = data["vote_type"]
     # La constraint única (post_id, user_id) garantiza un solo voto por usuario.
-    existing = PostVote.query.filter_by(post_id=post_id, user_id=data["user_id"]).first()
+    existing = PostVote.query.filter_by(post_id=post_id, user_id=user_id).first()
     if existing:
         if existing.vote_type == vote_type:
             # Mismo voto → lo quita (toggle off).
@@ -183,7 +185,7 @@ def vote_post(post_id):
             existing.vote_type = vote_type
             user_vote = vote_type
     else:
-        db.session.add(PostVote(post_id=post_id, user_id=data["user_id"], vote_type=vote_type))
+        db.session.add(PostVote(post_id=post_id, user_id=user_id, vote_type=vote_type))
         post.vote_score += vote_type
         user_vote = vote_type
 

@@ -1,55 +1,60 @@
-"""Google OAuth login (authorization-code flow).
+"""Autenticación delegada a Auth0 (OAuth 2.0 Authorization Code).
 
-El token que viaja al frontend es un identificador firmado (itsdangerous) del
-`users.id` interno en Postgres — no datos crudos de Google. `/api/auth/me`
-es la única fuente confiable de identidad: el backend nunca debe confiar en
-el bloque `user=` que va en la URL (es solo para pintar la UI al instante).
+El Authorization Server es Auth0 (un proveedor de terceros): hospeda el login y
+el consent. Aquí la app actúa solo como cliente OIDC: redirige a Auth0, recibe el
+`code`, lo canjea server-to-server por un `access_token` (JWT) y provisiona el
+usuario local. En cada request protegido, auth_utils valida ese access_token por
+JWKS y ancla la identidad en su `sub`. `/api/auth/me` es la fuente confiable para
+pintar la UI (el fragmento de la URL no se usa como identidad).
+
+El login con Google institucional (@ulasalle) vive detrás de Auth0 como una
+conexión social; la restricción de dominio se aplica en una Action de Auth0 y
+aquí como defensa en profundidad.
 """
 import os
 import secrets
 from urllib.parse import urlencode
 
 import requests
-from flask import Blueprint, redirect, request, session, current_app, jsonify
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+from flask import Blueprint, redirect, request, session, jsonify
 
 from models import User, db
 from validators import is_institutional_email
+from auth_utils import current_user
 
 auth_bp = Blueprint("auth", __name__)
 
-CLIENT_ID     = os.getenv("GOOGLE_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-REDIRECT_URI  = os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:5000/oauth/callback")
+AUTH0_DOMAIN  = os.getenv("AUTH0_DOMAIN")
+CLIENT_ID     = os.getenv("AUTH0_CLIENT_ID")
+CLIENT_SECRET = os.getenv("AUTH0_CLIENT_SECRET")
+AUDIENCE      = os.getenv("AUTH0_AUDIENCE")
+CALLBACK_URL  = os.getenv("AUTH0_CALLBACK_URL", "http://localhost:5000/oauth/callback")
 FRONTEND_URL  = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-AUTH_URL     = "https://accounts.google.com/o/oauth2/v2/auth"
-TOKEN_URL    = "https://oauth2.googleapis.com/token"
-USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
-SCOPE        = "openid email profile"
-
-TOKEN_MAX_AGE = 60 * 60 * 24 * 7  # 7 días
-
-
-def _serializer():
-    return URLSafeTimedSerializer(current_app.secret_key, salt="auth-token")
+AUTHORIZE_URL = f"https://{AUTH0_DOMAIN}/authorize"
+TOKEN_URL     = f"https://{AUTH0_DOMAIN}/oauth/token"
+USERINFO_URL  = f"https://{AUTH0_DOMAIN}/userinfo"
+LOGOUT_URL    = f"https://{AUTH0_DOMAIN}/v2/logout"
+SCOPE         = "openid profile email"
 
 
-def _find_or_create_user(google_id, email, name, picture):
-    user = User.query.filter_by(google_id=google_id).first()
+def _find_or_create_user(sub, email, name, picture):
+    """Provisiona el usuario local a partir del `sub` de Auth0 (guardado en
+    google_id para no migrar el esquema)."""
+    user = User.query.filter_by(google_id=sub).first()
     if user:
         return user
 
     existing = User.query.filter_by(email=email).first()
     if existing:
-        existing.google_id = google_id
-        existing.auth_provider = "google"
+        existing.google_id = sub
+        existing.auth_provider = "auth0"
         if not existing.avatar_url:
             existing.avatar_url = picture
         db.session.commit()
         return existing
 
-    username = email.split("@")[0] or "usuario"
+    username = (email.split("@")[0] if email else "") or "usuario"
     original_username = username
     counter = 1
     while User.query.filter_by(username=username).first():
@@ -61,48 +66,52 @@ def _find_or_create_user(google_id, email, name, picture):
         email=email,
         display_name=name or username,
         avatar_url=picture,
-        google_id=google_id,
-        auth_provider="google",
+        google_id=sub,
+        auth_provider="auth0",
     )
     db.session.add(user)
     db.session.commit()
     return user
 
 
-# Paso 1: redirigir a Google
-@auth_bp.route("/api/auth/google/login")
-def google_login():
+# Paso 1: iniciar el flujo → redirigir al Universal Login de Auth0.
+# `audience` es clave: sin él, Auth0 devuelve un access_token opaco (no JWT validable).
+@auth_bp.route("/api/auth/login")
+def login():
     state = secrets.token_urlsafe(16)
     session["oauth_state"] = state
     params = {
         "response_type": "code",
         "client_id":     CLIENT_ID,
-        "redirect_uri":  REDIRECT_URI,
+        "redirect_uri":  CALLBACK_URL,
         "scope":         SCOPE,
+        "audience":      AUDIENCE,
         "state":         state,
     }
-    return redirect(f"{AUTH_URL}?{urlencode(params)}")
+    return redirect(f"{AUTHORIZE_URL}?{urlencode(params)}")
 
 
-# Paso 2: callback — canjea el code, busca/crea el usuario en Postgres
-# y vuelve al frontend con un token firmado sobre el id interno.
+# Paso 2: callback — canjea el code por tokens (server-to-server), provisiona el
+# usuario y vuelve al frontend con el access_token.
 @auth_bp.route("/oauth/callback")
-def google_callback():
+def callback():
     if request.args.get("state") != session.get("oauth_state"):
-        return "Invalid state (CSRF)", 400
+        return "Estado inválido (CSRF)", 400
     if "error" in request.args:
-        return f"Error: {request.args['error']}", 400
+        return redirect(f"{FRONTEND_URL}/oauth/callback#error={request.args['error']}")
 
-    token_resp = requests.post(TOKEN_URL, data={
-        "code":          request.args.get("code"),
+    token_resp = requests.post(TOKEN_URL, json={
+        "grant_type":    "authorization_code",
         "client_id":     CLIENT_ID,
         "client_secret": CLIENT_SECRET,
-        "redirect_uri":  REDIRECT_URI,
-        "grant_type":    "authorization_code",
+        "code":          request.args.get("code"),
+        "redirect_uri":  CALLBACK_URL,
     }, timeout=10)
     if not token_resp.ok:
-        return f"Error al canjear el token con Google: {token_resp.text}", 400
-    access_token = token_resp.json()["access_token"]
+        return f"Error al canjear el token con Auth0: {token_resp.text}", 400
+    access_token = token_resp.json().get("access_token")
+    if not access_token:
+        return "Auth0 no devolvió access_token (¿falta configurar el audience/API?)", 400
 
     info = requests.get(
         USERINFO_URL,
@@ -110,39 +119,32 @@ def google_callback():
         timeout=10,
     ).json()
 
-    # Solo se admiten correos institucionales @ulasalle.edu.pe.
+    # Defensa en profundidad: solo correos institucionales (la Action de Auth0 ya
+    # debería bloquear el resto).
     if not is_institutional_email(info.get("email", "")):
         return redirect(f"{FRONTEND_URL}/oauth/callback#error=dominio")
 
-    user = _find_or_create_user(
-        google_id=info["sub"],
+    _find_or_create_user(
+        sub=info["sub"],
         email=info.get("email", ""),
         name=info.get("name"),
         picture=info.get("picture"),
     )
-
-    token = _serializer().dumps({"user_id": user.id})
-    return redirect(f"{FRONTEND_URL}/oauth/callback#token={token}")
+    return redirect(f"{FRONTEND_URL}/oauth/callback#token={access_token}")
 
 
-# Verifica el token firmado y devuelve el usuario real desde Postgres.
-# El frontend debe usar esto (no el fragmento de la URL) para saber quién
-# está autenticado.
+# Valida el access token (Bearer) por JWKS y devuelve el usuario real.
 @auth_bp.route("/api/auth/me")
 def me():
-    token = request.args.get("token") or request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
-    if not token:
-        return jsonify({"error": "Falta el token"}), 401
-
-    try:
-        data = _serializer().loads(token, max_age=TOKEN_MAX_AGE)
-    except SignatureExpired:
-        return jsonify({"error": "Token expirado"}), 401
-    except BadSignature:
-        return jsonify({"error": "Token inválido"}), 401
-
-    user = User.query.filter_by(id=data.get("user_id"), deleted_at=None).first()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
+    user = current_user()
+    if user is None:
+        return jsonify({"error": "Token inválido o ausente"}), 401
     return jsonify({"user": user.to_dict()})
+
+
+# Cierra la sesión SSO en Auth0 y regresa al frontend. El frontend limpia su
+# sesión local antes de redirigir aquí.
+@auth_bp.route("/api/auth/logout")
+def logout():
+    params = {"client_id": CLIENT_ID, "returnTo": FRONTEND_URL}
+    return redirect(f"{LOGOUT_URL}?{urlencode(params)}")

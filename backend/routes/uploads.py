@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from storage import upload_image
+from auth_utils import require_auth
 
 uploads_bp = Blueprint("uploads", __name__)
 
@@ -7,6 +8,7 @@ uploads_bp = Blueprint("uploads", __name__)
 # Subida genérica de imágenes: devuelve la URL pública. La usan el composer,
 # comentarios, edición de comunidad y edición de perfil.
 @uploads_bp.route("/uploads", methods=["POST"])
+@require_auth
 def upload():
     file = request.files.get("file")
     if not file:

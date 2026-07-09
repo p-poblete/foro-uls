@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "HablaLaSalle (Readuls) API",
+    "description": "Colección del Trabajo Final. Endpoints públicos y protegidos (OAuth 2.0 vía Auth0).\n\n## Variables\n- `base_url`: URL del backend (ej. https://readuls-xxx.onrender.com o http://localhost:5000).\n- `token`: access_token de Auth0. **Cómo obtenerlo:** inicia sesión en la app y copia el valor de `auth_token` desde localStorage del navegador (DevTools → Application → Local Storage). Es un JWT que expira; si da 401, vuelve a loguearte y cópialo de nuevo.\n\nLos endpoints protegidos mandan `Authorization: Bearer {{token}}`. Las carpetas incluyen casos de error 401/403.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "https://readuls-843408448797.us-central1.run.app" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Público",
+      "item": [
+        {
+          "name": "Health check",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] } }
+        },
+        {
+          "name": "Feed de posts",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/posts?limit=20", "host": ["{{base_url}}"], "path": ["api", "posts"], "query": [{ "key": "limit", "value": "20" }] } }
+        },
+        {
+          "name": "Listar comunidades",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/communities", "host": ["{{base_url}}"], "path": ["api", "communities"] } }
+        },
+        {
+          "name": "Listar carreras",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/careers", "host": ["{{base_url}}"], "path": ["api", "careers"] } }
+        },
+        {
+          "name": "Post por id",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/posts/1", "host": ["{{base_url}}"], "path": ["api", "posts", "1"] } }
+        },
+        {
+          "name": "Comentarios de un post",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/posts/1/comments", "host": ["{{base_url}}"], "path": ["api", "posts", "1", "comments"] } }
+        }
+      ]
+    },
+    {
+      "name": "Autenticado (Bearer)",
+      "item": [
+        {
+          "name": "Mi usuario (/auth/me)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/auth/me", "host": ["{{base_url}}"], "path": ["api", "auth", "me"] }
+          }
+        },
+        {
+          "name": "Crear post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"community_id\": 1,\n  \"title\": \"Mi primera publicación\",\n  \"content\": \"Hola desde Postman\",\n  \"label\": \"DISCUSSION\"\n}" },
+            "url": { "raw": "{{base_url}}/api/posts", "host": ["{{base_url}}"], "path": ["api", "posts"] }
+          }
+        },
+        {
+          "name": "Editar post",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Título editado\"\n}" },
+            "url": { "raw": "{{base_url}}/api/posts/1", "host": ["{{base_url}}"], "path": ["api", "posts", "1"] }
+          }
+        },
+        {
+          "name": "Votar post",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"vote_type\": 1\n}" },
+            "url": { "raw": "{{base_url}}/api/posts/1/vote", "host": ["{{base_url}}"], "path": ["api", "posts", "1", "vote"] }
+          }
+        },
+        {
+          "name": "Crear comentario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"content\": \"Buen aporte\",\n  \"parent_id\": null\n}" },
+            "url": { "raw": "{{base_url}}/api/posts/1/comments", "host": ["{{base_url}}"], "path": ["api", "posts", "1", "comments"] }
+          }
+        },
+        {
+          "name": "Crear comunidad",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Mi comunidad\",\n  \"description\": \"Creada desde Postman\"\n}" },
+            "url": { "raw": "{{base_url}}/api/communities", "host": ["{{base_url}}"], "path": ["api", "communities"] }
+          }
+        },
+        {
+          "name": "Mis notificaciones",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/users/1/notifications", "host": ["{{base_url}}"], "path": ["api", "users", "1", "notifications"] }
+          }
+        },
+        {
+          "name": "Subir imagen",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "file", "type": "file", "src": [] },
+              { "key": "prefix", "value": "uploads", "type": "text" }
+            ] },
+            "url": { "raw": "{{base_url}}/api/uploads", "host": ["{{base_url}}"], "path": ["api", "uploads"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Errores esperados",
+      "item": [
+        {
+          "name": "401 — Crear post sin token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"community_id\": 1,\n  \"title\": \"Sin token\"\n}" },
+            "url": { "raw": "{{base_url}}/api/posts", "host": ["{{base_url}}"], "path": ["api", "posts"] }
+          }
+        },
+        {
+          "name": "403 — Editar perfil ajeno",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"Intruso\"\n}" },
+            "url": { "raw": "{{base_url}}/api/users/999999", "host": ["{{base_url}}"], "path": ["api", "users", "999999"] }
+          }
+        }
+      ]
+    }
+  ]
+}

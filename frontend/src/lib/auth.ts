@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { redirect } from "@tanstack/react-router";
-import { STORAGE_KEYS } from "@/constants";
-import { fetchUsers } from "@/lib/api";
+import { STORAGE_KEYS, API_BASE_URL } from "@/constants";
 import type { UserProfile } from "@/types";
 
 export function getStoredUser(): UserProfile | null {
@@ -31,6 +30,12 @@ export function clearSession() {
   window.dispatchEvent(new Event("auth-change"));
 }
 
+/** Cierra sesión: limpia la sesión local y cierra también la sesión SSO en Auth0. */
+export function logout() {
+  clearSession();
+  window.location.href = `${API_BASE_URL}/api/auth/logout`;
+}
+
 export function useAuth() {
   const [user, setUser] = useState<UserProfile | null>(null);
   useEffect(() => {
@@ -53,15 +58,3 @@ export function requireAuth() {
   if (!raw) throw redirect({ to: "/login" });
 }
 
-/**
- * Login de desarrollo (sin OAuth): busca el usuario por correo en la BD real
- * y abre sesión. El token es un marcador local (el backend aún no exige JWT en
- * las rutas de datos). El login "real" es el de Google en /login.
- */
-export async function devLogin(email: string): Promise<UserProfile> {
-  const users = await fetchUsers();
-  const user = users.find((u) => u.email.toLowerCase() === email.trim().toLowerCase());
-  if (!user) throw new Error("No existe un usuario con ese correo. Usa el registro o el login con Google.");
-  setSession("dev-session", user);
-  return user;
-}

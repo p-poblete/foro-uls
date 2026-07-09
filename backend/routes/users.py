@@ -1,6 +1,7 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 from models import User, db
 from validators import is_institutional_email
+from auth_utils import require_auth, forbid_unless_owner
 from datetime import datetime, timezone
 
 users_bp = Blueprint("users", __name__)
@@ -51,7 +52,10 @@ def create_user():
 
 # update user
 @users_bp.route("/users/<int:user_id>", methods=["PUT"])
+@require_auth
 def update_user(user_id):
+    if (resp := forbid_unless_owner(user_id)):
+        return resp
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
@@ -72,16 +76,22 @@ def update_user(user_id):
     return jsonify({"message": "Usuario actualizado", "user": user.to_dict()})
 
 
-# notificaciones del usuario.
+# notificaciones del usuario (solo las suyas).
 # ponytail: sin sistema de notificaciones todavía → lista vacía real (no mock).
 @users_bp.route("/users/<int:user_id>/notifications", methods=["GET"])
+@require_auth
 def get_notifications(user_id):
+    if (resp := forbid_unless_owner(user_id)):
+        return resp
     return jsonify({"data": []})
 
 
 # delete user (soft delete)
 @users_bp.route("/users/<int:user_id>", methods=["DELETE"])
+@require_auth
 def delete_user(user_id):
+    if (resp := forbid_unless_owner(user_id)):
+        return resp
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404

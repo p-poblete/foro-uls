@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { Bell, LogOut, Menu, Plus, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth, clearSession } from "@/lib/auth";
+import { useAuth, logout } from "@/lib/auth";
 import { fetchNotifications } from "@/lib/api";
 import { initials } from "@/lib/format";
 import { APP_NAME, STORAGE_KEYS } from "@/constants";
@@ -137,9 +137,7 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
                     <Link to="/moderation">Panel de moderación</Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => { clearSession(); navigate({ to: "/" }); }}
-                  >
+                  <DropdownMenuItem onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" /> Cerrar sesión
                   </DropdownMenuItem>
                 </DropdownMenuContent>

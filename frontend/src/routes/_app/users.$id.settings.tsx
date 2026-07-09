@@ -14,7 +14,7 @@ import { GENDER_LABELS } from "@/constants";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { requireAuth, clearSession, updateStoredUser } from "@/lib/auth";
+import { requireAuth, clearSession, logout, updateStoredUser } from "@/lib/auth";
 import type { Gender } from "@/types";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -184,7 +184,7 @@ function UserSettingsPage() {
                 Al eliminar tu cuenta perderás todo tu contenido de forma permanente.
               </p>
               <div className="flex gap-2 mt-3">
-                <Button variant="outline" onClick={() => { clearSession(); toast.success("Sesión cerrada"); navigate({ to: "/" }); }}>
+                <Button variant="outline" onClick={() => logout()}>
                   Cerrar sesión
                 </Button>
                 <Button variant="destructive" onClick={deleteAccount}>Eliminar cuenta</Button>

@@ -69,7 +69,7 @@ services:
       MONGO_URL: mongodb://mongodb:27017
       MONGO_DB: readuls
       FRONTEND_URL: http://localhost:8080
-      GOOGLE_REDIRECT_URI: http://localhost:5000/oauth/callback
+      AUTH0_CALLBACK_URL: http://localhost:5000/oauth/callback
       # Almacenamiento MinIO: endpoint interno para subir, URL pública para el navegador.
       AWS_ACCESS_KEY_ID: minioadmin
       AWS_SECRET_ACCESS_KEY: minioadmin123
