@@ -66,6 +66,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap",
       },
     ],
+    scripts: [
+      {
+        // No-flash: aplica el tema guardado antes del primer paint. Default: claro.
+        // La clave es STORAGE_KEYS.theme; queda literal porque corre antes del bundle.
+        children:
+          "try{if(localStorage.getItem('readuls_theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}",
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

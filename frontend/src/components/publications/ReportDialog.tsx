@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { REPORT_REASONS, STORAGE_KEYS } from "@/constants";
+import { REPORT_REASONS } from "@/constants";
+import { createReport } from "@/lib/api";
 import { toast } from "sonner";
 
 interface Props {
@@ -19,25 +20,22 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId, targetL
   const [reason, setReason] = useState<string>(REPORT_REASONS[0].value);
   const [detail, setDetail] = useState("");
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     try {
-      const arr = JSON.parse(localStorage.getItem(STORAGE_KEYS.reports) ?? "[]");
-      arr.push({
-        id: `r-${Date.now()}`,
+      await createReport({
         target_type: targetType,
         target_id: targetId,
         target_label: targetLabel,
         reason,
         detail,
-        status: "PENDING",
-        created_at: new Date().toISOString(),
       });
-      localStorage.setItem(STORAGE_KEYS.reports, JSON.stringify(arr));
-    } catch { /* noop */ }
-    toast.success("Reporte enviado. Nuestro equipo lo revisará.");
-    onOpenChange(false);
-    setDetail("");
+      toast.success("Reporte enviado. Un moderador lo revisará.");
+      onOpenChange(false);
+      setDetail("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "No se pudo enviar el reporte (¿iniciaste sesión?)");
+    }
   }
 
   return (

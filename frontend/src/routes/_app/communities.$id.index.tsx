@@ -1,12 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCommunity, fetchCommunityPosts, fetchUser } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchCommunity, fetchCommunityPosts, fetchUser, joinCommunity, leaveCommunity } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, compactNumber, timeAgo } from "@/lib/format";
 import { PRIVACY_DESCRIPTIONS, PRIVACY_LABELS } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { PublicationList } from "@/components/publications/PublicationList";
-import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -31,17 +30,37 @@ function CommunityPage() {
     queryFn: () => fetchUser(community!.creator_id),
     enabled: !!community?.creator_id,
   });
-  const [joined, setJoined] = useState(false);
+  const queryClient = useQueryClient();
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !community) return <p className="text-center py-10">Comunidad no encontrada.</p>;
 
-  function toggleJoin() {
+  const membership = community.membership ?? null;
+  const isOwner = user?.id === community.creator_id;
+
+  async function toggleJoin() {
     if (!user) return toast.error("Inicia sesión para unirte.");
     if (!community) return;
     if (community.privacy_level === "PRIVATE") return toast("Esta comunidad es por invitación.");
-    setJoined(!joined);
-    toast.success(joined ? `Has salido de ${community.name}` : `Te uniste a ${community.name}`);
+    try {
+      if (membership === "active") {
+        await leaveCommunity(community.id);
+        toast.success(`Has salido de ${community.name}`);
+      } else if (membership === "pending") {
+        await leaveCommunity(community.id); // cancela la solicitud pendiente
+        toast.success("Solicitud cancelada");
+      } else {
+        const { status } = await joinCommunity(community.id);
+        toast.success(status === "active"
+          ? `Te uniste a ${community.name}`
+          : "Solicitud enviada, pendiente de aprobación");
+      }
+      await queryClient.invalidateQueries({ queryKey: ["community", id] });
+      await queryClient.invalidateQueries({ queryKey: ["communities"] });
+      await queryClient.invalidateQueries({ queryKey: ["members", id] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo actualizar la membresía");
+    }
   }
 
   return (
@@ -71,14 +90,16 @@ function CommunityPage() {
             <p className="text-xs text-muted-foreground mt-1">{PRIVACY_DESCRIPTIONS[community.privacy_level]}</p>
           </div>
           <div className="flex flex-col gap-2">
-            <Button
-              onClick={toggleJoin}
-              variant={joined ? "outline" : "default"}
-              className="rounded-full"
-            >
-              {joined ? "Unido" : "Unirse"}
-            </Button>
-            {user?.id === community.creator_id && (
+            {!isOwner && (
+              <Button
+                onClick={toggleJoin}
+                variant={membership ? "outline" : "default"}
+                className="rounded-full"
+              >
+                {membership === "active" ? "Unido" : membership === "pending" ? "Pendiente…" : "Unirse"}
+              </Button>
+            )}
+            {isOwner && (
               <Button asChild variant="outline" className="rounded-full">
                 <Link to="/communities/$id/edit" params={{ id: community.id }}>Editar</Link>
               </Button>

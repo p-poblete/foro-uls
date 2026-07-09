@@ -33,6 +33,29 @@ export interface Community {
   creator_id: string;
   created_at: string;
   is_member?: boolean;
+  /** Estado de membresía del usuario autenticado: active | pending | null. */
+  membership?: "active" | "pending" | null;
+}
+
+export interface CommunityMembership {
+  community_id: string;
+  user_id: string;
+  role: "member" | "owner";
+  status: "active" | "pending";
+  joined_at: string;
+  user?: UserProfile;
+}
+
+export interface Report {
+  _id: string;
+  target_type: "publication" | "comment" | "user" | "community";
+  target_id: string;
+  target_label?: string | null;
+  reason: string;
+  detail: string;
+  status: "PENDING" | "REVIEWED" | "DISMISSED";
+  reporter_id: string;
+  created_at: string;
 }
 
 export interface CommunityRule {

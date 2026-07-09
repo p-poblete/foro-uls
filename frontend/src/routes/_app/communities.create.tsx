@@ -31,7 +31,9 @@ function CreateCommunityPage() {
     if (!name.trim()) return toast.error("El nombre es obligatorio.");
     if (!user) return toast.error("Inicia sesión para crear una comunidad.");
     try {
-      await createCommunity({ name, description, owner_id: user.id });
+      // El backend toma el owner del token; aquí solo viaja la privacidad elegida.
+      const visibility = privacy === "PUBLIC" ? "public" : privacy === "RESTRICTED" ? "restricted" : "private";
+      await createCommunity({ name, description, visibility });
       await queryClient.invalidateQueries({ queryKey: ["communities"] });
       toast.success(`Comunidad "${name}" creada`);
       navigate({ to: "/communities" });

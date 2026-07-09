@@ -3,23 +3,13 @@ import { useEffect, useState } from "react";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { STORAGE_KEYS, REPORT_REASONS } from "@/constants";
-import { requireAuth } from "@/lib/auth";
-import { Shield, Users, FileWarning, Check, X } from "lucide-react";
+import { REPORT_REASONS } from "@/constants";
+import { requireAuth, isModerator } from "@/lib/auth";
+import { Shield, Users, FileWarning, Check, X, ShieldOff } from "lucide-react";
 import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { fetchFeed, fetchCommunities } from "@/lib/api";
-
-interface ReportItem {
-  id: string;
-  target_type: string;
-  target_id: string;
-  target_label?: string;
-  reason: string;
-  detail: string;
-  status: "PENDING" | "REVIEWED" | "DISMISSED";
-  created_at: string;
-}
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchReports, resolveReport, fetchCommunities, updateCommunity, deleteCommunity } from "@/lib/api";
+import type { Report } from "@/types";
 
 export const Route = createFileRoute("/_app/moderation")({
   beforeLoad: requireAuth,
@@ -28,29 +18,72 @@ export const Route = createFileRoute("/_app/moderation")({
 });
 
 function ModerationPage() {
-  const [reports, setReports] = useState<ReportItem[]>([]);
-  const { data: feed } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
-  const { data: communities } = useQuery({ queryKey: ["communities"], queryFn: fetchCommunities });
+  const queryClient = useQueryClient();
+  // isModerator lee localStorage → solo en cliente (evita hydration mismatch en SSR).
+  // El backend exige el rol `moderator` (Auth0 RBAC) en estas rutas; el gate de
+  // UI solo evita mostrar un panel que devolvería 403.
+  const [moderator, setModerator] = useState(false);
+  useEffect(() => setModerator(isModerator()), []);
+  const { data: reports, isError } = useQuery({
+    queryKey: ["reports"],
+    queryFn: () => fetchReports(),
+    enabled: moderator,
+  });
+  const { data: communities } = useQuery({
+    queryKey: ["communities"], queryFn: fetchCommunities, enabled: moderator,
+  });
 
-  useEffect(() => { load(); }, []);
-  function load() {
-    try { setReports(JSON.parse(localStorage.getItem(STORAGE_KEYS.reports) ?? "[]")); }
-    catch { setReports([]); }
-  }
-  function updateStatus(id: string, status: ReportItem["status"]) {
-    const next = reports.map((r) => r.id === id ? { ...r, status } : r);
-    localStorage.setItem(STORAGE_KEYS.reports, JSON.stringify(next));
-    setReports(next);
-    toast.success(status === "REVIEWED" ? "Marcado como revisado" : "Reporte descartado");
+  if (!moderator) {
+    return (
+      <div className="max-w-xl mx-auto w-full text-center py-16">
+        <ShieldOff className="h-10 w-10 mx-auto text-muted-foreground" />
+        <h1 className="font-display text-xl font-semibold mt-4">Acceso restringido</h1>
+        <p className="text-sm text-muted-foreground mt-2">
+          Este panel requiere el rol de moderador. Si crees que deberías tenerlo,
+          contacta al administrador del foro.
+        </p>
+      </div>
+    );
   }
 
-  const pending = reports.filter((r) => r.status === "PENDING");
+  const pending = (reports ?? []).filter((r) => r.status === "PENDING");
+
+  async function resolve(id: string, status: "REVIEWED" | "DISMISSED") {
+    try {
+      await resolveReport(id, status);
+      toast.success(status === "REVIEWED" ? "Marcado como revisado" : "Reporte descartado");
+      await queryClient.invalidateQueries({ queryKey: ["reports"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo actualizar el reporte");
+    }
+  }
+
+  async function archiveCommunity(id: string, name: string) {
+    if (!confirm(`¿Archivar la comunidad "${name}"? Dejará de ser visible.`)) return;
+    try {
+      await deleteCommunity(id);
+      toast.success(`Comunidad "${name}" archivada`);
+      await queryClient.invalidateQueries({ queryKey: ["communities"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo archivar");
+    }
+  }
+
+  async function suspendCommunity(id: string, name: string) {
+    try {
+      await updateCommunity(id, { visibility: "private" });
+      toast.success(`Comunidad "${name}" suspendida (privada)`);
+      await queryClient.invalidateQueries({ queryKey: ["communities"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo suspender");
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto w-full">
       <FeedHeader
         title="Panel de moderación"
-        subtitle="Revisa reportes, comunidades y usuarios"
+        subtitle="Revisa reportes y gestiona comunidades"
       />
 
       <Tabs defaultValue="reports">
@@ -63,17 +96,16 @@ function ModerationPage() {
         </TabsList>
 
         <TabsContent value="reports" className="mt-4">
-          {reports.length === 0 ? (
+          {isError ? (
+            <EmptyState text="No se pudieron cargar los reportes (¿tu token tiene el rol moderator?)." />
+          ) : (reports ?? []).length === 0 ? (
             <EmptyState text="No hay reportes por el momento." />
           ) : (
             <ul className="space-y-2">
-              {reports.map((r) => {
+              {(reports ?? []).map((r) => {
                 const reasonLabel = REPORT_REASONS.find((x) => x.value === r.reason)?.label ?? r.reason;
-                const pubTitle = r.target_type === "publication"
-                  ? (feed ?? []).find((p) => p.id === r.target_id)?.title
-                  : undefined;
                 return (
-                  <li key={r.id} className="rounded-xl border border-border bg-card p-4">
+                  <li key={r._id} className="rounded-xl border border-border bg-card p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -83,17 +115,17 @@ function ModerationPage() {
                           <StatusPill status={r.status} />
                         </div>
                         <p className="text-sm mt-1 font-medium truncate">
-                          {r.target_label ?? pubTitle ?? r.target_id}
+                          {r.target_label ?? `${r.target_type} #${r.target_id}`}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">Motivo: {reasonLabel}</p>
                         {r.detail && <p className="text-sm mt-2 text-foreground/80">{r.detail}</p>}
                       </div>
                       {r.status === "PENDING" && (
                         <div className="flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "DISMISSED")}>
+                          <Button size="sm" variant="outline" onClick={() => resolve(r._id, "DISMISSED")}>
                             <X className="h-3.5 w-3.5 mr-1" /> Descartar
                           </Button>
-                          <Button size="sm" onClick={() => updateStatus(r.id, "REVIEWED")}>
+                          <Button size="sm" onClick={() => resolve(r._id, "REVIEWED")}>
                             <Check className="h-3.5 w-3.5 mr-1" /> Resolver
                           </Button>
                         </div>
@@ -115,8 +147,8 @@ function ModerationPage() {
                   <p className="text-xs text-muted-foreground">{c.member_count} miembros · {c.privacy_level}</p>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="outline">Suspender</Button>
-                  <Button size="sm" variant="destructive">Archivar</Button>
+                  <Button size="sm" variant="outline" onClick={() => suspendCommunity(c.id, c.name)}>Suspender</Button>
+                  <Button size="sm" variant="destructive" onClick={() => archiveCommunity(c.id, c.name)}>Archivar</Button>
                 </div>
               </li>
             ))}
@@ -131,7 +163,7 @@ function ModerationPage() {
   );
 }
 
-function StatusPill({ status }: { status: ReportItem["status"] }) {
+function StatusPill({ status }: { status: Report["status"] }) {
   const map = {
     PENDING: "bg-[var(--color-label-help)]/15 text-[var(--color-label-help)]",
     REVIEWED: "bg-[var(--color-label-discussion)]/15 text-[var(--color-label-discussion)]",

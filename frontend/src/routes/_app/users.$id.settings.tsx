@@ -14,12 +14,13 @@ import { GENDER_LABELS } from "@/constants";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { requireAuth, clearSession, logout, updateStoredUser } from "@/lib/auth";
+import { requireSelf, clearSession, logout, updateStoredUser } from "@/lib/auth";
 import type { Gender } from "@/types";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/users/$id/settings")({
-  beforeLoad: requireAuth,
+  // Solo tu propia configuración: cambiar el id en la URL redirige a la tuya.
+  beforeLoad: ({ params }) => requireSelf(params.id),
   head: () => ({ meta: [{ title: "Configuración — Readuls" }] }),
   component: UserSettingsPage,
 });

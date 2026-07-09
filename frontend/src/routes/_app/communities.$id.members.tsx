@@ -1,81 +1,77 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCommunity, fetchUsers } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchCommunity, fetchMembers, approveMember, removeMember } from "@/lib/api";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, timeAgo } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { Search, Shield, UserMinus, UserPlus, Crown } from "lucide-react";
+import { Search, UserMinus, Check, Crown } from "lucide-react";
 import { toast } from "sonner";
-import type { UserProfile } from "@/types";
+import type { CommunityMembership } from "@/types";
 
 export const Route = createFileRoute("/_app/communities/$id/members")({
   head: () => ({ meta: [{ title: "Miembros — Readuls" }] }),
   component: CommunityMembersPage,
 });
 
-interface Member {
-  user_id: string;
-  role: "OWNER" | "MOD" | "MEMBER";
-  joined_at: string;
-}
-
 function CommunityMembersPage() {
   const { id } = Route.useParams();
   const user = useAuth();
+  const queryClient = useQueryClient();
   const { data: community, isLoading, isError } = useQuery({
     queryKey: ["community", id], queryFn: () => fetchCommunity(id),
   });
-  const { data: users } = useQuery({ queryKey: ["users"], queryFn: fetchUsers });
+  // El backend incluye a los pendientes solo si quien consulta es el dueño.
+  const { data: members } = useQuery({ queryKey: ["members", id], queryFn: () => fetchMembers(id) });
   const [q, setQ] = useState("");
-  const [members, setMembers] = useState<Member[]>([]);
-
-  // ponytail: sin tabla de membresías todavía → los "miembros" son los usuarios
-  // reales de la BD, con rol OWNER para el creador. Las acciones son locales.
-  useEffect(() => {
-    if (!community || !users) return;
-    setMembers(users.map((u, i) => ({
-      user_id: u.id,
-      role: u.id === community.creator_id ? "OWNER" : (i === 1 ? "MOD" : "MEMBER"),
-      joined_at: new Date(Date.now() - i * 86400000 * 30).toISOString(),
-    })));
-  }, [community, users]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
-    const byId = new Map((users ?? []).map((u) => [u.id, u]));
-    return members
-      .map((m) => ({ ...m, user: byId.get(m.user_id) }))
-      .filter((m): m is Member & { user: UserProfile } => !!m.user)
-      .filter((m) => !term || m.user.username.toLowerCase().includes(term));
-  }, [members, q, users]);
+    return (members ?? []).filter(
+      (m) => !term || m.user?.username.toLowerCase().includes(term),
+    );
+  }, [members, q]);
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !community) return <p className="text-center py-10">Comunidad no encontrada.</p>;
   const isOwner = user?.id === community.creator_id;
+  const active = filtered.filter((m) => m.status === "active");
+  const pending = filtered.filter((m) => m.status === "pending");
 
-  function promote(id: string) {
-    setMembers((ms) => ms.map((m) => m.user_id === id ? { ...m, role: "MOD" } : m));
-    toast.success("Usuario promovido a moderador");
+  async function refresh() {
+    await queryClient.invalidateQueries({ queryKey: ["members", id] });
+    await queryClient.invalidateQueries({ queryKey: ["community", id] });
   }
-  function demote(id: string) {
-    setMembers((ms) => ms.map((m) => m.user_id === id ? { ...m, role: "MEMBER" } : m));
-    toast.success("Rol actualizado");
+
+  async function approve(userId: string) {
+    try {
+      await approveMember(id, userId);
+      toast.success("Solicitud aprobada");
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo aprobar");
+    }
   }
-  function kick(id: string) {
-    if (!confirm("¿Expulsar a este miembro?")) return;
-    setMembers((ms) => ms.filter((m) => m.user_id !== id));
-    toast.success("Miembro expulsado");
+
+  async function kick(userId: string, isPending: boolean) {
+    if (!isPending && !confirm("¿Expulsar a este miembro?")) return;
+    try {
+      await removeMember(id, userId);
+      toast.success(isPending ? "Solicitud rechazada" : "Miembro expulsado");
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "No se pudo quitar al miembro");
+    }
   }
 
   return (
     <div className="max-w-3xl mx-auto w-full">
       <FeedHeader
         title={`Miembros de ${community.name}`}
-        subtitle={`${members.length} miembros`}
+        subtitle={`${active.length} miembros${pending.length ? ` · ${pending.length} pendientes` : ""}`}
         action={
           <Button asChild variant="outline" className="rounded-full">
             <Link to="/communities/$id" params={{ id: community.id }}>Volver</Link>
@@ -93,54 +89,65 @@ function CommunityMembersPage() {
         />
       </div>
 
-      <ul className="space-y-2">
-        {filtered.map((m) => (
-          <li key={m.user_id} className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={m.user.profile_image ?? undefined} />
-              <AvatarFallback>{initials(m.user.username)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <Link to="/users/$id" params={{ id: m.user.id }} className="font-medium text-sm hover:underline">
-                  @{m.user.username}
-                </Link>
-                <RolePill role={m.role} />
-              </div>
-              <p className="text-xs text-muted-foreground">Se unió {timeAgo(m.joined_at)}</p>
-            </div>
-            {isOwner && m.role !== "OWNER" && (
-              <div className="flex gap-1">
-                {m.role === "MEMBER" ? (
-                  <Button size="sm" variant="outline" onClick={() => promote(m.user_id)}>
-                    <UserPlus className="h-3.5 w-3.5 mr-1" /> Promover
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="outline" onClick={() => demote(m.user_id)}>
-                    <Shield className="h-3.5 w-3.5 mr-1" /> Quitar mod
-                  </Button>
-                )}
-                <Button size="sm" variant="destructive" onClick={() => kick(m.user_id)}>
-                  <UserMinus className="h-3.5 w-3.5 mr-1" /> Expulsar
+      {isOwner && pending.length > 0 && (
+        <>
+          <h2 className="text-sm font-semibold mb-2">Solicitudes pendientes</h2>
+          <ul className="space-y-2 mb-6">
+            {pending.map((m) => (
+              <MemberRow key={m.user_id} m={m}>
+                <Button size="sm" onClick={() => approve(m.user_id)}>
+                  <Check className="h-3.5 w-3.5 mr-1" /> Aprobar
                 </Button>
-              </div>
+                <Button size="sm" variant="outline" onClick={() => kick(m.user_id, true)}>
+                  Rechazar
+                </Button>
+              </MemberRow>
+            ))}
+          </ul>
+        </>
+      )}
+
+      <ul className="space-y-2">
+        {active.map((m) => (
+          <MemberRow key={m.user_id} m={m}>
+            {isOwner && m.role !== "owner" && (
+              <Button size="sm" variant="destructive" onClick={() => kick(m.user_id, false)}>
+                <UserMinus className="h-3.5 w-3.5 mr-1" /> Expulsar
+              </Button>
             )}
-          </li>
+          </MemberRow>
         ))}
-        {filtered.length === 0 && (
-          <li className="text-center text-sm text-muted-foreground py-8">Sin resultados.</li>
+        {active.length === 0 && (
+          <li className="text-center text-sm text-muted-foreground py-8">
+            Aún no hay miembros. ¡Sé el primero en unirte!
+          </li>
         )}
       </ul>
     </div>
   );
 }
 
-function RolePill({ role }: { role: Member["role"] }) {
-  if (role === "OWNER") {
-    return <span className="text-[10px] rounded-full px-2 py-0.5 bg-primary/10 text-primary font-semibold flex items-center gap-1"><Crown className="h-3 w-3" />Propietario</span>;
-  }
-  if (role === "MOD") {
-    return <span className="text-[10px] rounded-full px-2 py-0.5 bg-secondary text-secondary-foreground font-semibold flex items-center gap-1"><Shield className="h-3 w-3" />Moderador</span>;
-  }
-  return null;
+function MemberRow({ m, children }: { m: CommunityMembership; children?: React.ReactNode }) {
+  return (
+    <li className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
+      <Avatar className="h-10 w-10">
+        <AvatarImage src={m.user?.profile_image ?? undefined} />
+        <AvatarFallback>{initials(m.user?.username ?? "?")}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <Link to="/users/$id" params={{ id: m.user_id }} className="font-medium text-sm hover:underline">
+            @{m.user?.username}
+          </Link>
+          {m.role === "owner" && (
+            <span className="text-[10px] rounded-full px-2 py-0.5 bg-primary/10 text-primary font-semibold flex items-center gap-1">
+              <Crown className="h-3 w-3" />Propietario
+            </span>
+          )}
+        </div>
+        <p className="text-xs text-muted-foreground">Se unió {timeAgo(m.joined_at)}</p>
+      </div>
+      <div className="flex gap-1">{children}</div>
+    </li>
+  );
 }

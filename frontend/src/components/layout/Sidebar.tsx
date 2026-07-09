@@ -3,7 +3,7 @@ import { Home, Megaphone, Map, BookOpen, Bookmark, Shield, Tag } from "lucide-re
 import { useQuery } from "@tanstack/react-query";
 import { fetchCareers } from "@/lib/api";
 import { ALL_LABELS, LABEL_LABELS } from "@/constants";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isModerator } from "@/lib/auth";
 
 export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuth();
@@ -55,7 +55,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="mt-6 space-y-1">
         <SectionLink to="/rules" icon={<BookOpen className="h-4 w-4" />} label="Reglas de ReadULS" onNavigate={onNavigate} />
-        {user && <SectionLink to="/moderation" icon={<Shield className="h-4 w-4" />} label="Moderación" onNavigate={onNavigate} />}
+        {user && isModerator() && <SectionLink to="/moderation" icon={<Shield className="h-4 w-4" />} label="Moderación" onNavigate={onNavigate} />}
       </div>
     </nav>
   );

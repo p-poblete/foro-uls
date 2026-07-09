@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { fetchNotifications } from "@/lib/api";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { fetchNotifications, fetchUsers, markNotificationsRead } from "@/lib/api";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, timeAgo } from "@/lib/format";
@@ -27,20 +27,31 @@ function writeIds(ids: string[]) {
 
 function NotificationsPage() {
   const user = useAuth();
+  const queryClient = useQueryClient();
   const { data: notifications } = useQuery({
     queryKey: ["notifications", user?.id],
     queryFn: () => fetchNotifications(user!.id),
     enabled: !!user,
   });
-  const notifs = notifications ?? [];
+  // El backend guarda trigger_user_id; el perfil se resuelve aquí para el avatar.
+  const { data: users } = useQuery({ queryKey: ["users"], queryFn: fetchUsers });
+  const byId = new Map((users ?? []).map((u) => [u.id, u]));
+  const notifs = (notifications ?? []).map((n) => ({
+    ...n,
+    trigger_user: n.trigger_user ?? byId.get(n.trigger_user_id),
+  }));
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
   useEffect(() => { setReadSet(new Set(readIds())); }, []);
 
-  function markAll() {
+  async function markAll() {
     const ids = notifs.map((n) => n._id);
     writeIds(ids);
     setReadSet(new Set(ids));
+    if (user) {
+      await markNotificationsRead(user.id).catch(() => {});
+      await queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+    }
   }
   function markOne(id: string) {
     if (readSet.has(id)) return;

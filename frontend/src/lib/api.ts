@@ -5,7 +5,8 @@
  */
 import { apiFetch } from "@/lib/api-client";
 import type {
-  Career, Comment, Community, Notification, Publication, UserProfile,
+  Career, Comment, Community, CommunityMembership, Notification, Publication,
+  Report, UserProfile,
 } from "@/types";
 
 // ---------- shapes del backend ----------
@@ -17,6 +18,7 @@ type BackendCommunity = {
   id: number; name: string; description: string | null;
   owner_id: number; visibility: string; created_at: string;
   image_url?: string | null; banner_url?: string | null;
+  member_count?: number; membership?: "active" | "pending" | null;
 };
 type BackendPost = {
   id: number; title: string; content: string | null; image_url: string | null;
@@ -57,7 +59,8 @@ function mapCommunity(c: BackendCommunity): Community {
     cover_image: c.banner_url ?? null,
     privacy_level:
       c.visibility === "public" ? "PUBLIC" : c.visibility === "restricted" ? "RESTRICTED" : "PRIVATE",
-    member_count: 0,
+    member_count: c.member_count ?? 0,
+    membership: c.membership ?? null,
     creator_id: String(c.owner_id),
     created_at: c.created_at,
   };
@@ -298,26 +301,77 @@ export async function updateCommunity(id: string, input: {
   return mapCommunity(res.community);
 }
 
+export async function deleteCommunity(id: string): Promise<void> {
+  await apiFetch(`/communities/${id}`, { method: "DELETE" });
+}
+
 export async function createCommunity(input: {
-  name: string; description?: string; owner_id: string;
+  name: string; description?: string; visibility?: "public" | "restricted" | "private";
 }): Promise<Community> {
   const res = await apiFetch<{ community: BackendCommunity }>("/communities", {
     method: "POST",
     body: JSON.stringify({
-      name: input.name, description: input.description, owner_id: Number(input.owner_id),
+      name: input.name,
+      description: input.description,
+      visibility: input.visibility ?? "public",
     }),
   });
   return mapCommunity(res.community);
 }
 
-export async function createUser(input: {
-  username: string; email: string; display_name: string;
-}): Promise<UserProfile> {
-  const res = await apiFetch<{ user: BackendUser }>("/users", {
-    method: "POST",
-    body: JSON.stringify(input),
+// ---------- membresía de comunidades ----------
+export async function joinCommunity(id: string): Promise<{ status: "active" | "pending" }> {
+  const res = await apiFetch<{ membership: { status: "active" | "pending" } }>(
+    `/communities/${id}/join`, { method: "POST" });
+  return { status: res.membership.status };
+}
+
+export async function leaveCommunity(id: string): Promise<void> {
+  await apiFetch(`/communities/${id}/leave`, { method: "POST" });
+}
+
+export async function fetchMembers(id: string): Promise<CommunityMembership[]> {
+  const res = await apiFetch<{ members: (Omit<CommunityMembership, "user" | "community_id" | "user_id"> &
+    { community_id: number; user_id: number; user: BackendUser })[] }>(`/communities/${id}/members`);
+  return res.members.map((m) => ({
+    ...m,
+    community_id: String(m.community_id),
+    user_id: String(m.user_id),
+    user: mapUser(m.user),
+  }));
+}
+
+export async function approveMember(communityId: string, userId: string): Promise<void> {
+  await apiFetch(`/communities/${communityId}/members/${userId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "active" }),
   });
-  return mapUser(res.user);
+}
+
+export async function removeMember(communityId: string, userId: string): Promise<void> {
+  await apiFetch(`/communities/${communityId}/members/${userId}`, { method: "DELETE" });
+}
+
+// ---------- reportes (moderación) ----------
+export async function createReport(input: {
+  target_type: Report["target_type"]; target_id: string;
+  target_label?: string; reason: string; detail?: string;
+}): Promise<void> {
+  await apiFetch("/reports", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function fetchReports(status?: string): Promise<Report[]> {
+  const q = status ? `?status=${status}` : "";
+  const res = await apiFetch<{ reports: Report[] }>(`/reports${q}`);
+  return res.reports;
+}
+
+export async function resolveReport(id: string, status: "REVIEWED" | "DISMISSED"): Promise<void> {
+  await apiFetch(`/reports/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+}
+
+export async function markNotificationsRead(userId: string): Promise<void> {
+  await apiFetch(`/users/${userId}/notifications/read`, { method: "PATCH" });
 }
 
 export async function updateUser(id: string, input: {

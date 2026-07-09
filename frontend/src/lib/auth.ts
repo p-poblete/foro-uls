@@ -51,10 +51,42 @@ export function useAuth() {
   return user;
 }
 
+/** Roles del access token de Auth0 (claim namespaced inyectado por la Action RBAC).
+ * Solo para decidir qué UI mostrar: la autorización real la hace el backend. */
+export function getRoles(): string[] {
+  if (typeof window === "undefined") return [];
+  const token = localStorage.getItem(STORAGE_KEYS.token);
+  if (!token) return [];
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return payload["https://readuls/roles"] ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export function isModerator(): boolean {
+  return getRoles().includes("moderator");
+}
+
 /** Route guard: redirects to /login if no session (client-side only). */
 export function requireAuth() {
   if (typeof window === "undefined") return;
   const raw = localStorage.getItem(STORAGE_KEYS.user);
   if (!raw) throw redirect({ to: "/login" });
+}
+
+/** Route guard: la ruta lleva un $id de usuario que debe ser el propio.
+ * Evita abrir settings/rutas personales de otro usuario cambiando la URL
+ * (el backend igual responde 403; esto corta la fuga de UI). */
+export function requireSelf(paramId: string) {
+  if (typeof window === "undefined") return;
+  requireAuth();
+  const me = getStoredUser();
+  if (!me || me.id !== paramId) {
+    throw redirect(me
+      ? { to: "/users/$id/settings", params: { id: me.id } }
+      : { to: "/login" });
+  }
 }
 
