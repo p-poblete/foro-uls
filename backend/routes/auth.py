@@ -21,6 +21,7 @@ from flask import Blueprint, redirect, request, session, jsonify
 from models import User, db
 from validators import is_institutional_email
 from auth_utils import current_user
+from errors import err
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -138,7 +139,7 @@ def callback():
 def me():
     user = current_user()
     if user is None:
-        return jsonify({"error": "Token inválido o ausente"}), 401
+        return err("UNAUTHORIZED", "Token inválido o ausente", 401)
     return jsonify({"user": user.to_dict()})
 
 

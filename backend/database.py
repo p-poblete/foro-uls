@@ -19,11 +19,13 @@ def init_mongo(app):
     client = MongoClient(app.config["MONGO_URL"], serverSelectionTimeoutMS=timeout_ms)
     _mongo_db = client[app.config["MONGO_DB"]]
 
-    # Índices para la colección de comentarios.
+    # Índices para comentarios, notificaciones y reportes.
     # ponytail: tolerante a Mongo ausente para que el demo de OAuth arranque sin BD.
     try:
         _mongo_db.comments.create_index([("post_id", 1), ("parent_id", 1)])
         _mongo_db.comments.create_index([("post_id", 1), ("created_at", -1)])
+        _mongo_db.notifications.create_index([("user_id", 1), ("created_at", -1)])
+        _mongo_db.reports.create_index([("status", 1), ("created_at", -1)])
     except Exception as e:
         app.logger.warning("MongoDB no disponible, se omiten índices: %s", e)
 

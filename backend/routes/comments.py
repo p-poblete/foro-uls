@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify, g
 from database import get_mongo
-from auth_utils import require_auth, forbid_unless_owner
+from models import Post
+from auth_utils import require_auth, forbid_unless_owner, forbid_unless_owner_or_moderator
+from errors import err
+from notifications import notify
 from bson import ObjectId
 from bson.errors import InvalidId
 from datetime import datetime, timezone
@@ -41,7 +44,7 @@ def get_comments(post_id):
     elif parent_id_param:
         oid = _parse_oid(parent_id_param)
         if not oid:
-            return jsonify({"error": "parent_id inválido"}), 400
+            return err("VALIDATION_ERROR", "parent_id inválido", 400)
         query["parent_id"] = oid
     # sin parent_id → todos los comentarios del post (el frontend arma el árbol)
 
@@ -66,12 +69,12 @@ def get_user_comments(user_id):
 def get_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
-        return jsonify({"error": "ID de comentario inválido"}), 400
+        return err("VALIDATION_ERROR", "ID de comentario inválido", 400)
 
     mongo = get_mongo()
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
-        return jsonify({"error": "Comentario no encontrado"}), 404
+        return err("NOT_FOUND", "Comentario no encontrado", 404)
 
     return jsonify({"comment": _serialize(comment)})
 
@@ -82,7 +85,7 @@ def get_comment(comment_id):
 def create_comment(post_id):
     data = request.get_json() or {}
     if not data.get("content"):
-        return jsonify({"error": "content es obligatorio"}), 400
+        return err("VALIDATION_ERROR", "content es obligatorio", 400)
 
     mongo = get_mongo()
     parent_id = None
@@ -91,10 +94,10 @@ def create_comment(post_id):
     if data.get("parent_id"):
         parent_oid = _parse_oid(data["parent_id"])
         if not parent_oid:
-            return jsonify({"error": "parent_id inválido"}), 400
+            return err("VALIDATION_ERROR", "parent_id inválido", 400)
         parent = mongo.comments.find_one({"_id": parent_oid, "deleted_at": None})
         if not parent:
-            return jsonify({"error": "Comentario padre no encontrado"}), 404
+            return err("NOT_FOUND", "Comentario padre no encontrado", 404)
         parent_id = parent_oid
         depth = parent.get("depth", 0) + 1
 
@@ -119,6 +122,12 @@ def create_comment(post_id):
     comment["created_at"] = now.isoformat()
     comment["updated_at"] = now.isoformat()
 
+    # Notifica al autor del post (best-effort).
+    post = Post.query.filter_by(id=post_id, deleted_at=None).first()
+    if post and post.author_id:
+        notify(post.author_id, "COMMENT", g.current_user.id,
+               post_id=post_id, comment_id=comment["_id"])
+
     return jsonify({"message": "Comentario creado", "comment": comment}), 201
 
 
@@ -128,16 +137,16 @@ def create_comment(post_id):
 def update_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
-        return jsonify({"error": "ID de comentario inválido"}), 400
+        return err("VALIDATION_ERROR", "ID de comentario inválido", 400)
 
     data = request.get_json()
     if not data or not data.get("content"):
-        return jsonify({"error": "content es obligatorio"}), 400
+        return err("VALIDATION_ERROR", "content es obligatorio", 400)
 
     mongo = get_mongo()
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
-        return jsonify({"error": "Comentario no encontrado"}), 404
+        return err("NOT_FOUND", "Comentario no encontrado", 404)
     if (resp := forbid_unless_owner(comment.get("author_id"))):
         return resp
 
@@ -149,26 +158,26 @@ def update_comment(comment_id):
     return jsonify({"message": "Comentario actualizado", "comment": _serialize(comment)})
 
 
-# delete comment (soft delete)
+# delete comment (soft delete) — autor o moderador
 @comments_bp.route("/comments/<string:comment_id>", methods=["DELETE"])
 @require_auth
 def delete_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
-        return jsonify({"error": "ID de comentario inválido"}), 400
+        return err("VALIDATION_ERROR", "ID de comentario inválido", 400)
 
     mongo = get_mongo()
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
-        return jsonify({"error": "Comentario no encontrado"}), 404
-    if (resp := forbid_unless_owner(comment.get("author_id"))):
+        return err("NOT_FOUND", "Comentario no encontrado", 404)
+    if (resp := forbid_unless_owner_or_moderator(comment.get("author_id"))):
         return resp
 
     mongo.comments.update_one(
         {"_id": oid},
         {"$set": {"deleted_at": datetime.now(timezone.utc), "status": "removed"}}
     )
-    return jsonify({"message": "Comentario eliminado", "comment_id": comment_id})
+    return "", 204
 
 
 # vote a comment
@@ -177,18 +186,18 @@ def delete_comment(comment_id):
 def vote_comment(comment_id):
     oid = _parse_oid(comment_id)
     if not oid:
-        return jsonify({"error": "ID de comentario inválido"}), 400
+        return err("VALIDATION_ERROR", "ID de comentario inválido", 400)
 
     data = request.get_json()
     if not data or "vote_type" not in data:
-        return jsonify({"error": "vote_type (1 o -1) es obligatorio"}), 400
+        return err("VALIDATION_ERROR", "vote_type (1 o -1) es obligatorio", 400)
     if data["vote_type"] not in (1, -1):
-        return jsonify({"error": "vote_type debe ser 1 (upvote) o -1 (downvote)"}), 400
+        return err("VALIDATION_ERROR", "vote_type debe ser 1 (upvote) o -1 (downvote)", 400)
 
     mongo = get_mongo()
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
-        return jsonify({"error": "Comentario no encontrado"}), 404
+        return err("NOT_FOUND", "Comentario no encontrado", 404)
 
     mongo.comments.update_one({"_id": oid}, {"$inc": {"vote_score": data["vote_type"]}})
     new_score = comment.get("vote_score", 0) + data["vote_type"]

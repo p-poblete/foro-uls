@@ -1,8 +1,10 @@
 from flask import Blueprint, request, jsonify, g
-from models import Post, PostVote, Community, User, db
+from models import Post, PostVote, Community, CommunityMember, User, db
 from database import get_mongo
 from storage import upload_image
-from auth_utils import require_auth, forbid_unless_owner
+from auth_utils import require_auth, forbid_unless_owner, forbid_unless_owner_or_moderator
+from errors import err
+from notifications import notify, notify_many
 from datetime import datetime, timezone
 
 posts_bp = Blueprint("posts", __name__)
@@ -52,7 +54,7 @@ def feed():
 def get_posts(community_id):
     community = Community.query.filter_by(id=community_id, deleted_at=None).first()
     if not community:
-        return jsonify({"error": "Comunidad no encontrada"}), 404
+        return err("NOT_FOUND", "Comunidad no encontrada", 404)
 
     user_id = request.args.get("user_id", type=int)
     posts = (
@@ -69,7 +71,7 @@ def get_posts(community_id):
 def get_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
-        return jsonify({"error": "Post no encontrado"}), 404
+        return err("NOT_FOUND", "Post no encontrado", 404)
     user_id = request.args.get("user_id", type=int)
     return jsonify({"post": _enrich(post, user_id)})
 
@@ -82,18 +84,18 @@ def create_post():
     file = request.files.get("image")
 
     if not data or not data.get("community_id") or not data.get("title"):
-        return jsonify({"error": "community_id y title son obligatorios"}), 400
+        return err("VALIDATION_ERROR", "community_id y title son obligatorios", 400)
 
     community = Community.query.filter_by(id=data["community_id"], deleted_at=None).first()
     if not community:
-        return jsonify({"error": "Comunidad no encontrada"}), 404
+        return err("NOT_FOUND", "Comunidad no encontrada", 404)
 
     # La imagen puede venir como archivo multipart o como URL ya subida (/api/uploads).
     image_url = data.get("image_url")
     if file:
         url, error = upload_image(file, prefix="posts")
         if error:
-            return jsonify({"error": error}), 400
+            return err("STORAGE_ERROR", error, 400)
         image_url = url
 
     post = Post(
@@ -108,6 +110,14 @@ def create_post():
     )
     db.session.add(post)
     db.session.commit()
+
+    # Notifica a los miembros activos de la comunidad (best-effort, en Mongo).
+    member_ids = [
+        uid for (uid,) in db.session.query(CommunityMember.user_id)
+        .filter_by(community_id=community.id, status="active").all()
+    ]
+    notify_many(member_ids, "COMMUNITY_POST", g.current_user.id, post_id=post.id)
+
     return jsonify({"message": "Post creado", "post": post.to_dict()}), 201
 
 
@@ -117,7 +127,7 @@ def create_post():
 def update_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
-        return jsonify({"error": "Post no encontrado"}), 404
+        return err("NOT_FOUND", "Post no encontrado", 404)
     if (resp := forbid_unless_owner(post.author_id)):
         return resp
 
@@ -139,20 +149,20 @@ def update_post(post_id):
     return jsonify({"message": "Post actualizado", "post": _enrich(post)})
 
 
-# delete post (soft delete)
+# delete post (soft delete) — autor o moderador
 @posts_bp.route("/posts/<int:post_id>", methods=["DELETE"])
 @require_auth
 def delete_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
-        return jsonify({"error": "Post no encontrado"}), 404
-    if (resp := forbid_unless_owner(post.author_id)):
+        return err("NOT_FOUND", "Post no encontrado", 404)
+    if (resp := forbid_unless_owner_or_moderator(post.author_id)):
         return resp
 
     post.deleted_at = datetime.now(timezone.utc)
     post.status = "removed"
     db.session.commit()
-    return jsonify({"message": "Post eliminado", "post": post.to_dict()})
+    return "", 204
 
 
 # vote a post
@@ -161,13 +171,13 @@ def delete_post(post_id):
 def vote_post(post_id):
     data = request.get_json() or {}
     if "vote_type" not in data:
-        return jsonify({"error": "vote_type (1 o -1) es obligatorio"}), 400
+        return err("VALIDATION_ERROR", "vote_type (1 o -1) es obligatorio", 400)
     if data["vote_type"] not in (1, -1):
-        return jsonify({"error": "vote_type debe ser 1 (upvote) o -1 (downvote)"}), 400
+        return err("VALIDATION_ERROR", "vote_type debe ser 1 (upvote) o -1 (downvote)", 400)
 
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
-        return jsonify({"error": "Post no encontrado"}), 404
+        return err("NOT_FOUND", "Post no encontrado", 404)
 
     user_id = g.current_user.id  # el votante es el usuario autenticado
     vote_type = data["vote_type"]
@@ -188,6 +198,10 @@ def vote_post(post_id):
         db.session.add(PostVote(post_id=post_id, user_id=user_id, vote_type=vote_type))
         post.vote_score += vote_type
         user_vote = vote_type
+        # Notifica al autor solo en votos nuevos (no toggles ni cambios de sentido).
+        if post.author_id:
+            notify(post.author_id, "LIKE" if vote_type == 1 else "DISLIKE",
+                   user_id, post_id=post.id)
 
     db.session.commit()
     return jsonify({"vote_score": post.vote_score, "user_vote": user_vote})

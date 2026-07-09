@@ -1,10 +1,15 @@
 from flask import Blueprint, request, jsonify, g
 from models import User, db
-from validators import is_institutional_email
+from database import get_mongo
 from auth_utils import require_auth, forbid_unless_owner
+from errors import err
+from notifications import serialize as serialize_notification
 from datetime import datetime, timezone
 
 users_bp = Blueprint("users", __name__)
+
+# Nota: no hay POST /users. Con Auth0, el alta ocurre en el callback de OAuth
+# (provisioning por `sub`); mantener un alta manual sería un bypass del flujo.
 
 
 # list all users
@@ -19,38 +24,11 @@ def get_users():
 def get_user(user_id):
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
+        return err("NOT_FOUND", "Usuario no encontrado", 404)
     return jsonify({"user": user.to_dict()})
 
 
-# create a new user
-@users_bp.route("/users", methods=["POST"])
-def create_user():
-    data = request.get_json()
-    if not data or not data.get("username") or not data.get("email") or not data.get("display_name"):
-        return jsonify({"error": "username, email y display_name son obligatorios"}), 400
-
-    if not is_institutional_email(data["email"]):
-        return jsonify({"error": "Debes usar un correo institucional @ulasalle.edu.pe"}), 400
-
-    if User.query.filter_by(username=data["username"]).first():
-        return jsonify({"error": "El username ya existe"}), 409
-    if User.query.filter_by(email=data["email"]).first():
-        return jsonify({"error": "El email ya existe"}), 409
-
-    user = User(
-        username=data["username"],
-        email=data["email"],
-        display_name=data["display_name"],
-        avatar_url=data.get("avatar_url"),
-        bio=data.get("bio"),
-    )
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({"message": "Usuario creado", "user": user.to_dict()}), 201
-
-
-# update user
+# update user (solo el propio perfil)
 @users_bp.route("/users/<int:user_id>", methods=["PUT"])
 @require_auth
 def update_user(user_id):
@@ -58,7 +36,7 @@ def update_user(user_id):
         return resp
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
+        return err("NOT_FOUND", "Usuario no encontrado", 404)
 
     data = request.get_json() or {}
     if "display_name" in data:
@@ -76,17 +54,42 @@ def update_user(user_id):
     return jsonify({"message": "Usuario actualizado", "user": user.to_dict()})
 
 
-# notificaciones del usuario (solo las suyas).
-# ponytail: sin sistema de notificaciones todavía → lista vacía real (no mock).
+# notificaciones del usuario (solo las suyas), desde MongoDB
 @users_bp.route("/users/<int:user_id>/notifications", methods=["GET"])
 @require_auth
 def get_notifications(user_id):
     if (resp := forbid_unless_owner(user_id)):
         return resp
-    return jsonify({"data": []})
+    mongo = get_mongo()
+    try:
+        docs = list(
+            mongo.notifications
+            .find({"user_id": user_id})
+            .sort("created_at", -1)
+            .limit(50)
+        )
+    except Exception:
+        docs = []  # Mongo caído → lista vacía, no 500
+    return jsonify({"data": [serialize_notification(n) for n in docs]})
 
 
-# delete user (soft delete)
+# marcar todas las notificaciones como leídas
+@users_bp.route("/users/<int:user_id>/notifications/read", methods=["PATCH"])
+@require_auth
+def mark_notifications_read(user_id):
+    if (resp := forbid_unless_owner(user_id)):
+        return resp
+    try:
+        get_mongo().notifications.update_many(
+            {"user_id": user_id, "is_read": False},
+            {"$set": {"is_read": True}},
+        )
+    except Exception:
+        pass
+    return "", 204
+
+
+# delete user (soft delete, solo la propia cuenta)
 @users_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @require_auth
 def delete_user(user_id):
@@ -94,9 +97,9 @@ def delete_user(user_id):
         return resp
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
+        return err("NOT_FOUND", "Usuario no encontrado", 404)
 
     user.deleted_at = datetime.now(timezone.utc)
     user.status = "inactive"
     db.session.commit()
-    return jsonify({"message": "Usuario eliminado", "user": user.to_dict()})
+    return "", 204

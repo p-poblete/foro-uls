@@ -14,9 +14,10 @@ from functools import wraps
 
 import jwt
 from jwt import PyJWKClient
-from flask import request, jsonify, g
+from flask import request, g
 
 from models import User
+from errors import err
 
 AUTH0_DOMAIN   = os.getenv("AUTH0_DOMAIN")
 AUTH0_AUDIENCE = os.getenv("AUTH0_AUDIENCE")
@@ -73,25 +74,28 @@ def require_auth(fn):
     def wrapper(*args, **kwargs):
         user = current_user()
         if user is None:
-            return jsonify({"error": "Autenticación requerida"}), 401
+            return err("UNAUTHORIZED", "Autenticación requerida", 401)
         g.current_user = user
         return fn(*args, **kwargs)
     return wrapper
 
 
+def is_moderator():
+    """True si el token del request trae el rol `moderator` (RBAC de Auth0)."""
+    roles_claim = os.getenv("AUTH0_ROLES_CLAIM", "https://readuls/roles")
+    return "moderator" in ((_claims() or {}).get(roles_claim, []))
+
+
 def require_moderator(fn):
     """403 si el usuario autenticado no tiene el rol `moderator` (RBAC de Auth0).
     Auth0 inyecta los roles en un claim namespaced del token (ver AUTH0_ROLES_CLAIM)."""
-    roles_claim = os.getenv("AUTH0_ROLES_CLAIM", "https://readuls/roles")
-
     @wraps(fn)
     def wrapper(*args, **kwargs):
         user = current_user()
         if user is None:
-            return jsonify({"error": "Autenticación requerida"}), 401
-        roles = (_claims() or {}).get(roles_claim, [])
-        if "moderator" not in roles:
-            return jsonify({"error": "Requiere rol de moderador"}), 403
+            return err("UNAUTHORIZED", "Autenticación requerida", 401)
+        if not is_moderator():
+            return err("FORBIDDEN", "Requiere rol de moderador", 403)
         g.current_user = user
         return fn(*args, **kwargs)
     return wrapper
@@ -101,8 +105,16 @@ def forbid_unless_owner(owner_id):
     """Devuelve una respuesta 403 si el usuario actual no es el dueño; None si lo es.
     Uso: `if (resp := forbid_unless_owner(post.author_id)): return resp`."""
     if g.current_user.id != owner_id:
-        return jsonify({"error": "No autorizado: no eres el dueño de este recurso"}), 403
+        return err("FORBIDDEN", "No autorizado: no eres el dueño de este recurso", 403)
     return None
+
+
+def forbid_unless_owner_or_moderator(owner_id):
+    """Como forbid_unless_owner, pero un moderador (rol Auth0) también pasa.
+    Para acciones de moderación sobre contenido ajeno (borrar posts/comentarios, etc.)."""
+    if g.current_user.id == owner_id or is_moderator():
+        return None
+    return err("FORBIDDEN", "No autorizado: requiere ser el dueño o moderador", 403)
 
 
 if __name__ == "__main__":

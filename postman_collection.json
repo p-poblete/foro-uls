@@ -35,6 +35,10 @@
         {
           "name": "Comentarios de un post",
           "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/posts/1/comments", "host": ["{{base_url}}"], "path": ["api", "posts", "1", "comments"] } }
+        },
+        {
+          "name": "Miembros de una comunidad",
+          "request": { "method": "GET", "url": { "raw": "{{base_url}}/api/communities/1/members", "host": ["{{base_url}}"], "path": ["api", "communities", "1", "members"] } }
         }
       ]
     },
@@ -128,6 +132,79 @@
             ] },
             "url": { "raw": "{{base_url}}/api/uploads", "host": ["{{base_url}}"], "path": ["api", "uploads"] }
           }
+        },
+        {
+          "name": "Unirse a comunidad",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/communities/1/join", "host": ["{{base_url}}"], "path": ["api", "communities", "1", "join"] }
+          }
+        },
+        {
+          "name": "Salir de comunidad",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/communities/1/leave", "host": ["{{base_url}}"], "path": ["api", "communities", "1", "leave"] }
+          }
+        },
+        {
+          "name": "Aprobar miembro pendiente (dueño)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"active\"\n}" },
+            "url": { "raw": "{{base_url}}/api/communities/1/members/2", "host": ["{{base_url}}"], "path": ["api", "communities", "1", "members", "2"] }
+          }
+        },
+        {
+          "name": "Reportar contenido",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"target_type\": \"publication\",\n  \"target_id\": \"1\",\n  \"reason\": \"SPAM\",\n  \"detail\": \"Publicidad repetida\"\n}" },
+            "url": { "raw": "{{base_url}}/api/reports", "host": ["{{base_url}}"], "path": ["api", "reports"] }
+          }
+        },
+        {
+          "name": "Marcar notificaciones leídas",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/users/1/notifications/read", "host": ["{{base_url}}"], "path": ["api", "users", "1", "notifications", "read"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Moderador (rol Auth0)",
+      "item": [
+        {
+          "name": "Listar reportes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/reports?status=PENDING", "host": ["{{base_url}}"], "path": ["api", "reports"], "query": [{ "key": "status", "value": "PENDING" }] }
+          }
+        },
+        {
+          "name": "Resolver reporte",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"REVIEWED\"\n}" },
+            "url": { "raw": "{{base_url}}/api/reports/REPLACE_ID", "host": ["{{base_url}}"], "path": ["api", "reports", "REPLACE_ID"] }
+          }
         }
       ]
     },
@@ -153,6 +230,21 @@
             ],
             "body": { "mode": "raw", "raw": "{\n  \"display_name\": \"Intruso\"\n}" },
             "url": { "raw": "{{base_url}}/api/users/999999", "host": ["{{base_url}}"], "path": ["api", "users", "999999"] }
+          }
+        },
+        {
+          "name": "403 — Listar reportes sin rol moderador",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": { "raw": "{{base_url}}/api/reports", "host": ["{{base_url}}"], "path": ["api", "reports"] }
+          }
+        },
+        {
+          "name": "404 — Ruta inexistente (handler JSON)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/no-existe", "host": ["{{base_url}}"], "path": ["api", "no-existe"] }
           }
         }
       ]

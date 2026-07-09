@@ -4,12 +4,14 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 
 from database import db, init_mongo
+from errors import register_error_handlers
 from routes.users import users_bp
 from routes.communities import communities_bp
 from routes.posts import posts_bp
 from routes.comments import comments_bp
 from routes.careers import careers_bp
 from routes.uploads import uploads_bp
+from routes.reports import reports_bp
 from routes.auth import auth_bp
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -48,7 +50,11 @@ def create_app():
     app.register_blueprint(comments_bp,    url_prefix="/api")
     app.register_blueprint(careers_bp,     url_prefix="/api")
     app.register_blueprint(uploads_bp,     url_prefix="/api")
+    app.register_blueprint(reports_bp,     url_prefix="/api")
     app.register_blueprint(auth_bp)  # rutas con path completo (/api/... y /oauth/callback)
+
+    # Errores 404/405/500 con el mismo shape JSON que el resto de la API.
+    register_error_handlers(app)
 
     # Health check
     @app.route("/")

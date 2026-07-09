@@ -84,6 +84,28 @@ class Community(db.Model):
         }
 
 
+# Community members (membresía + aprobación para comunidades restringidas)
+class CommunityMember(db.Model):
+    __tablename__  = "community_members"
+    __table_args__ = (db.UniqueConstraint("community_id", "user_id", name="uq_community_members"),)
+
+    id           = db.Column(db.Integer, primary_key=True)
+    community_id = db.Column(db.Integer, db.ForeignKey("communities.id", ondelete="CASCADE"), nullable=False)
+    user_id      = db.Column(db.Integer, db.ForeignKey("users.id",       ondelete="CASCADE"), nullable=False)
+    role         = db.Column(db.String(20), nullable=False, default="member")  # member | owner
+    status       = db.Column(db.String(20), nullable=False, default="active")  # active | pending
+    joined_at    = db.Column(db.DateTime(timezone=True), nullable=False, default=_now)
+
+    def to_dict(self):
+        return {
+            "community_id": self.community_id,
+            "user_id":      self.user_id,
+            "role":         self.role,
+            "status":       self.status,
+            "joined_at":    self.joined_at.isoformat() if self.joined_at else None,
+        }
+
+
 # Posts
 class Post(db.Model):
     __tablename__ = "posts"
