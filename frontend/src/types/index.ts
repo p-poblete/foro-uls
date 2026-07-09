@@ -35,6 +35,8 @@ export interface Community {
   is_member?: boolean;
   /** Estado de membresía del usuario autenticado: active | pending | null. */
   membership?: "active" | "pending" | null;
+  /** Estado administrativo: active | suspended | archived. */
+  status?: string;
 }
 
 export interface CommunityMembership {

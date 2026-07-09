@@ -19,6 +19,7 @@ type BackendCommunity = {
   owner_id: number; visibility: string; created_at: string;
   image_url?: string | null; banner_url?: string | null;
   member_count?: number; membership?: "active" | "pending" | null;
+  status?: string;
 };
 type BackendPost = {
   id: number; title: string; content: string | null; image_url: string | null;
@@ -61,6 +62,7 @@ function mapCommunity(c: BackendCommunity): Community {
       c.visibility === "public" ? "PUBLIC" : c.visibility === "restricted" ? "RESTRICTED" : "PRIVATE",
     member_count: c.member_count ?? 0,
     membership: c.membership ?? null,
+    status: c.status ?? "active",
     creator_id: String(c.owner_id),
     created_at: c.created_at,
   };
@@ -291,7 +293,7 @@ export async function createComment(
 }
 
 export async function updateCommunity(id: string, input: {
-  description?: string; visibility?: string;
+  description?: string; visibility?: string; status?: string;
   image_url?: string | null; banner_url?: string | null;
 }): Promise<Community> {
   const res = await apiFetch<{ community: BackendCommunity }>(`/communities/${id}`, {

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ImageUpload } from "@/components/ImageUpload";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { requireAuth, useAuth } from "@/lib/auth";
+import { requireAuth, useAuth, isModerator } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/communities/$id/edit")({
   beforeLoad: requireAuth,
@@ -48,7 +48,8 @@ function EditCommunityPage() {
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !community) return <p className="text-center py-10">Comunidad no encontrada.</p>;
-  if (user?.id !== community.creator_id) return <p className="text-center py-10">No puedes editar esta comunidad.</p>;
+  // El backend permite editar al dueño o a un moderador (Auth0 RBAC).
+  if (user?.id !== community.creator_id && !isModerator()) return <p className="text-center py-10">No puedes editar esta comunidad.</p>;
 
   async function save(e: React.FormEvent) {
     e.preventDefault();

@@ -6,9 +6,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import appCss from "../styles.css?url";
+import { STORAGE_KEYS } from "@/constants";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -95,6 +97,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  // El error de dominio en el login redirige por Auth0-logout antes de poder
+  // mostrar el toast; el motivo queda en localStorage y se muestra al aterrizar.
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEYS.loginError) === "dominio") {
+      localStorage.removeItem(STORAGE_KEYS.loginError);
+      toast.error("Solo se admiten cuentas @ulasalle.edu.pe. Puedes intentar con otra cuenta.");
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

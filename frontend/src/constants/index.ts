@@ -59,6 +59,7 @@ export const STORAGE_KEYS = {
   onboarding: "readuls_onboarding_done",
   notifsRead: "readuls_notifs_read",
   reports: "readuls_reports",
+  loginError: "readuls_login_error",
 };
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";

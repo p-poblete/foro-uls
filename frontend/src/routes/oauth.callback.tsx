@@ -30,9 +30,20 @@ function OAuthCallback() {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const token = params.get("token");
 
-    if (params.get("error") === "dominio") {
-      toast.error("Solo se admiten cuentas @ulasalle.edu.pe.");
-      navigate({ to: "/login" });
+    // El token viaja en el fragmento (#) — nunca llega a servidores — pero no
+    // debe quedar visible ni en el historial: se borra de la URL de inmediato.
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
+    // Cualquier error del login (la Action de Auth0 manda "access_denied" cuando
+    // rechaza el dominio; el backend manda "dominio" como defensa en profundidad):
+    // la sesión SSO de Auth0 quedó abierta con la cuenta rechazada, y sin logout
+    // el próximo "Continuar con Google" reutiliza esa cuenta y vuelve a fallar.
+    // Se cierra la sesión en Auth0 y se deja un flag para explicar el motivo.
+    if (params.get("error")) {
+      localStorage.setItem(STORAGE_KEYS.loginError, "dominio");
+      window.location.href = `${API_BASE_URL}/api/auth/logout`;
       return;
     }
 

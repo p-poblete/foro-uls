@@ -86,29 +86,47 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.03 260);
-  --foreground: oklch(0.97 0.005 240);
-  --card: oklch(0.21 0.04 260);
-  --card-foreground: oklch(0.97 0.005 240);
-  --popover: oklch(0.21 0.04 260);
-  --popover-foreground: oklch(0.97 0.005 240);
-  --primary: oklch(0.72 0.12 250);
-  --primary-foreground: oklch(0.16 0.03 260);
-  --primary-hover: oklch(0.78 0.12 250);
-  --secondary: oklch(0.27 0.04 260);
-  --secondary-foreground: oklch(0.97 0.005 240);
-  --muted: oklch(0.27 0.04 260);
-  --muted-foreground: oklch(0.7 0.02 260);
-  --accent: oklch(0.3 0.06 260);
-  --accent-foreground: oklch(0.97 0.005 240);
-  --destructive: oklch(0.62 0.22 27);
-  --destructive-foreground: oklch(0.97 0 0);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.72 0.12 250);
-  --sidebar: oklch(0.21 0.04 260);
-  --sidebar-foreground: oklch(0.97 0.005 240);
-  --sidebar-border: oklch(1 0 0 / 10%);
+  /* Paleta oscura v2: fondo profundo casi neutro, cards con elevación clara
+     (0.13 → 0.18), bordes visibles (17%) y texto suave pero de alto contraste.
+     Mantiene el azul La Salle como acento, aclarado para AA sobre oscuro. */
+  --background: oklch(0.13 0.02 262);
+  --foreground: oklch(0.93 0.01 250);
+
+  --card: oklch(0.18 0.025 260);
+  --card-foreground: oklch(0.93 0.01 250);
+
+  --popover: oklch(0.2 0.03 260);
+  --popover-foreground: oklch(0.93 0.01 250);
+
+  --primary: oklch(0.74 0.11 252);
+  --primary-foreground: oklch(0.13 0.02 262);
+  --primary-hover: oklch(0.8 0.1 252);
+
+  --secondary: oklch(0.25 0.03 260);
+  --secondary-foreground: oklch(0.9 0.01 250);
+
+  --muted: oklch(0.23 0.025 260);
+  --muted-foreground: oklch(0.72 0.015 255);
+
+  --accent: oklch(0.28 0.05 258);
+  --accent-foreground: oklch(0.95 0.01 250);
+
+  --destructive: oklch(0.65 0.2 25);
+  --destructive-foreground: oklch(0.98 0 0);
+
+  --border: oklch(1 0 0 / 17%);
+  --input: oklch(1 0 0 / 20%);
+  --ring: oklch(0.74 0.11 252);
+
+  /* Etiquetas más luminosas para leerse sobre fondo oscuro */
+  --label-help: oklch(0.83 0.14 80);
+  --label-announcement: oklch(0.72 0.14 255);
+  --label-discussion: oklch(0.76 0.13 160);
+  --label-case: oklch(0.7 0.19 25);
+
+  --sidebar: oklch(0.16 0.025 260);
+  --sidebar-foreground: oklch(0.9 0.01 250);
+  --sidebar-border: oklch(1 0 0 / 12%);
 }
 
 @layer base {

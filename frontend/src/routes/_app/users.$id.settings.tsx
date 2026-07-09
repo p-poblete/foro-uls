@@ -14,7 +14,7 @@ import { GENDER_LABELS } from "@/constants";
 import { ImageUpload } from "@/components/ImageUpload";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { requireSelf, clearSession, logout, updateStoredUser } from "@/lib/auth";
+import { requireSelf, clearSession, logout, updateStoredUser, getStoredUser } from "@/lib/auth";
 import type { Gender } from "@/types";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -29,7 +29,23 @@ function UserSettingsPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: user, isLoading, isError } = useQuery({ queryKey: ["user", id], queryFn: () => fetchUser(id) });
+
+  // Defensa en profundidad además del beforeLoad: en cargas directas por URL el
+  // guard no corre en SSR, así que el componente re-verifica en cliente y no
+  // renderiza NADA de otro usuario (ni siquiera lectura) mientras redirige.
+  const [selfChecked, setSelfChecked] = useState(false);
+  useEffect(() => {
+    const me = getStoredUser();
+    if (!me) { navigate({ to: "/login" }); return; }
+    if (me.id !== id) { navigate({ to: "/users/$id/settings", params: { id: me.id } }); return; }
+    setSelfChecked(true);
+  }, [id, navigate]);
+
+  const { data: user, isLoading, isError } = useQuery({
+    queryKey: ["user", id],
+    queryFn: () => fetchUser(id),
+    enabled: selfChecked, // no pide datos hasta confirmar que el id es el propio
+  });
   const { data: careers } = useQuery({ queryKey: ["careers"], queryFn: fetchCareers });
 
   const [username, setUsername] = useState("");
@@ -55,7 +71,7 @@ function UserSettingsPage() {
     setCareer(user.career_id);
   }, [user]);
 
-  if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
+  if (!selfChecked || isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !user) return <p className="text-center py-10">Usuario no encontrado.</p>;
 
   async function saveProfile(e: React.FormEvent) {

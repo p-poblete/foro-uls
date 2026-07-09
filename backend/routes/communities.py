@@ -147,6 +147,8 @@ def join_community(community_id):
     community = Community.query.filter_by(id=community_id, deleted_at=None).first()
     if not community:
         return err("NOT_FOUND", "Comunidad no encontrada", 404)
+    if community.status == "suspended":
+        return err("FORBIDDEN", "Esta comunidad está suspendida", 403)
     if community.visibility == "private":
         return err("FORBIDDEN", "Esta comunidad es privada (solo por invitación)", 403)
 

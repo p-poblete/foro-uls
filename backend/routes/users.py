@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from models import User, db
 from database import get_mongo
-from auth_utils import require_auth, forbid_unless_owner
+from auth_utils import require_auth, forbid_unless_owner, forbid_unless_owner_or_moderator
 from errors import err
 from notifications import serialize as serialize_notification
 from datetime import datetime, timezone
@@ -89,11 +89,11 @@ def mark_notifications_read(user_id):
     return "", 204
 
 
-# delete user (soft delete, solo la propia cuenta)
+# delete user (soft delete): la propia cuenta, o un moderador desactivando a un usuario
 @users_bp.route("/users/<int:user_id>", methods=["DELETE"])
 @require_auth
 def delete_user(user_id):
-    if (resp := forbid_unless_owner(user_id)):
+    if (resp := forbid_unless_owner_or_moderator(user_id)):
         return resp
     user = User.query.filter_by(id=user_id, deleted_at=None).first()
     if not user:
