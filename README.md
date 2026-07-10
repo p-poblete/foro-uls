@@ -4,9 +4,36 @@
 Universidad La Salle
 
 Foro de discusión por hilos, estilo Reddit, para la comunidad de la Universidad
-La Salle. Los usuarios inician sesión con su correo institucional, se organizan
-en comunidades, publican con etiquetas (`HELP`, `ANNOUNCEMENT`, `DISCUSSION`,
-`CASE`) y comentan en hilos anidados de profundidad arbitraria.
+La Salle. Los usuarios inician sesión con su correo institucional vía Auth0, se
+organizan en comunidades con distintos niveles de privacidad, publican con
+etiquetas (`HELP`, `ANNOUNCEMENT`, `DISCUSSION`, `CASE`) y comentan en hilos
+anidados de profundidad arbitraria. Incluye moderación de contenido con
+reportes, un panel de moderación completo (rol delegado a Auth0 RBAC) y un
+sistema de notificaciones que cubre toda la actividad relevante del foro.
+
+## Resumen funcional (v2.0)
+
+- **Cuentas y perfiles:** login/logout con Google institucional vía Auth0,
+  restringido a `@ulasalle.edu.pe`; edición de perfil, avatar, carrera y bio.
+- **Comunidades:** creación con privacidad configurable (pública, restringida
+  con aprobación, privada), unirse/salir, listado de miembros, edición y
+  archivado por el dueño o un moderador.
+- **Publicaciones y comentarios:** creación con etiqueta e imagen, votos
+  (upvote/downvote), hilos de comentarios anidados sin límite de profundidad,
+  edición y borrado por el autor (o un moderador).
+- **Reportes y moderación:** cualquier usuario reporta publicaciones o
+  comentarios; los moderadores (rol de Auth0) resuelven el reporte —
+  **mantener**, **descartar** o **eliminar el contenido** — siempre con un
+  motivo que se notifica a los involucrados. El panel de moderación también
+  permite suspender/reactivar y archivar comunidades, y desactivar cuentas.
+- **Notificaciones:** votos, comentarios, respuestas, nuevas publicaciones y
+  anuncios en tus comunidades, y el ciclo completo de un reporte (recibido,
+  resuelto, contenido eliminado/editado) — estas últimas son anónimas para
+  proteger la identidad de quien reporta.
+- **Tema claro/oscuro** con persistencia y sin parpadeo al cargar.
+
+Detalle técnico completo por módulo: [backend/README.md](backend/README.md),
+[frontend/README.md](frontend/README.md), [bd/README.md](bd/README.md).
 
 ## Integrantes
 
@@ -71,22 +98,27 @@ Toda la configuración del proveedor vive en variables de entorno
 
 ## Bases de datos — por qué dos
 
-- **PostgreSQL (relacional):** usuarios, comunidades, publicaciones, votos y
-  carreras. Son datos estructurados con relaciones e integridad referencial
-  (claves foráneas, restricciones de unicidad, *joins*), donde un motor
-  relacional es la elección natural.
-- **MongoDB (NoSQL):** los comentarios, modelados como un árbol con *materialized
-  path* (`parent_id`). Los hilos tienen profundidad arbitraria y forma variable;
-  un documento flexible evita *joins* recursivos costosos en SQL y encaja mejor
-  con el patrón de lectura/escritura de un foro.
+- **PostgreSQL (relacional):** usuarios, comunidades, membresías, publicaciones,
+  votos y carreras. Son datos estructurados con relaciones e integridad
+  referencial (claves foráneas, restricciones de unicidad, *joins*), donde un
+  motor relacional es la elección natural.
+- **MongoDB (NoSQL):** comentarios (árbol con *materialized path* vía
+  `parent_id`, profundidad arbitraria), notificaciones y reportes de contenido.
+  Los tres son documentos de alta escritura y forma variable — un hilo, una
+  notificación o un reporte no necesitan *joins* ni un esquema rígido, y un
+  documento flexible evita el costo de modelarlos en tablas relacionales.
+
+Detalle de colecciones, tablas e índices en [bd/README.md](bd/README.md).
 
 ## Estructura del repositorio
 
 ```
-backend/    API Flask — rutas en backend/routes/, modelos (models.py),
-            validación de tokens (auth_utils.py), almacenamiento (storage.py), seed
-frontend/   App TanStack Start — código en frontend/src/
-bd/         Diseño de esquema SQL/Mongo de referencia (no ejecutado por el backend)
+backend/    API Flask — ver backend/README.md para el detalle de endpoints,
+            modelos, autenticación y notificaciones
+frontend/   App TanStack Start — ver frontend/README.md para rutas, componentes
+            y manejo de estado/auth
+bd/         Esquema real (Postgres vía SQLAlchemy) + colecciones Mongo — ver
+            bd/README.md
 docs/       Documentos de planificación, diseño y guía de despliegue
 docker-compose.yml       Orquesta postgres, mongodb, minio, backend y frontend (local)
 postman_collection.json  Colección para probar la API (endpoints públicos y protegidos)
