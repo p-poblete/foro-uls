@@ -19,9 +19,12 @@ interface Props {
 export function ReportDialog({ open, onOpenChange, targetType, targetId, targetLabel }: Props) {
   const [reason, setReason] = useState<string>(REPORT_REASONS[0].value);
   const [detail, setDetail] = useState("");
+  const [sending, setSending] = useState(false); // evita el doble-submit
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (sending) return;
+    setSending(true);
     try {
       await createReport({
         target_type: targetType,
@@ -35,6 +38,8 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId, targetL
       setDetail("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo enviar el reporte (¿iniciaste sesión?)");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -62,7 +67,9 @@ export function ReportDialog({ open, onOpenChange, targetType, targetId, targetL
           </div>
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-            <Button type="submit" variant="destructive">Enviar reporte</Button>
+            <Button type="submit" variant="destructive" disabled={sending}>
+              {sending ? "Enviando…" : "Enviar reporte"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

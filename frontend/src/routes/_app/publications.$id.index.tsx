@@ -42,6 +42,9 @@ function PublicationPage() {
   const [commentImg, setCommentImg] = useState<string | null>(null);
   const [reaction, setReaction] = useState<"LIKE" | "DISLIKE" | null>(null);
   const [score, setScore] = useState(0);
+  // Evita el doble-submit de comentarios/respuestas (dos clics durante el await
+  // crearían el comentario dos veces).
+  const [sending, setSending] = useState(false);
 
   useEffect(() => { if (commentsData) setComments(commentsData); }, [commentsData]);
   useEffect(() => { if (pub) { setScore(pub.like_count - pub.dislike_count); setReaction(pub.user_reaction ?? null); } }, [pub]);
@@ -70,7 +73,8 @@ function PublicationPage() {
   async function submitComment(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return toast.error("Inicia sesión para comentar.");
-    if (!text.trim()) return;
+    if (!text.trim() || sending) return;
+    setSending(true);
     try {
       await createComment(id, user.id, text, undefined, commentImg);
       await queryClient.invalidateQueries({ queryKey: ["comments", id] });
@@ -79,17 +83,22 @@ function PublicationPage() {
       toast.success("Comentario publicado");
     } catch {
       toast.error("No se pudo publicar el comentario");
+    } finally {
+      setSending(false);
     }
   }
 
   async function addReply(parentId: string, content: string) {
-    if (!user) return;
+    if (!user || sending) return;
+    setSending(true);
     try {
       await createComment(id, user.id, content, parentId);
       await queryClient.invalidateQueries({ queryKey: ["comments", id] });
       toast.success("Respuesta publicada");
     } catch {
       toast.error("No se pudo responder");
+    } finally {
+      setSending(false);
     }
   }
 
@@ -193,7 +202,9 @@ function PublicationPage() {
             </div>
           )}
           <div className="flex justify-end mt-2">
-            <Button type="submit" className="rounded-full" disabled={!user || !text.trim()}>Comentar</Button>
+            <Button type="submit" className="rounded-full" disabled={!user || !text.trim() || sending}>
+              {sending ? "Comentando…" : "Comentar"}
+            </Button>
           </div>
         </form>
 

@@ -30,6 +30,9 @@ export function PublicationComposer({ open, onOpenChange, initial, mode = "creat
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), ...initial }));
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Evita el doble-submit: sin esto, dos clics rápidos durante el await crean
+  // la publicación dos veces (el POST no es idempotente).
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -62,6 +65,7 @@ export function PublicationComposer({ open, onOpenChange, initial, mode = "creat
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return; // ya hay un envío en vuelo
     if (!validate()) return;
 
     // Modo edición u otro flujo externo: delega en el padre.
@@ -75,6 +79,7 @@ export function PublicationComposer({ open, onOpenChange, initial, mode = "creat
 
     // Modo crear por defecto: persiste en la API.
     if (!user) return toast.error("Inicia sesión para publicar.");
+    setSubmitting(true);
     try {
       await createPost({
         community_id: draft.community_id,
@@ -92,6 +97,8 @@ export function PublicationComposer({ open, onOpenChange, initial, mode = "creat
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "No se pudo publicar");
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -228,11 +235,11 @@ export function PublicationComposer({ open, onOpenChange, initial, mode = "creat
           )}
 
           <DialogFooter className="gap-2">
-            <Button type="button" variant="outline" onClick={handleSaveDraft}>
+            <Button type="button" variant="outline" onClick={handleSaveDraft} disabled={submitting}>
               Guardar borrador
             </Button>
-            <Button type="submit" className="rounded-full">
-              {mode === "create" ? "Publicar" : "Guardar cambios"}
+            <Button type="submit" className="rounded-full" disabled={submitting}>
+              {submitting ? "Publicando…" : mode === "create" ? "Publicar" : "Guardar cambios"}
             </Button>
           </DialogFooter>
         </form>
