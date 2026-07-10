@@ -112,23 +112,25 @@ def create_post():
     db.session.commit()
 
     # Notifica a los miembros activos de la comunidad (best-effort, en Mongo).
+    # Los anuncios llevan tipo propio para distinguirse en la campana.
     member_ids = [
         uid for (uid,) in db.session.query(CommunityMember.user_id)
         .filter_by(community_id=community.id, status="active").all()
     ]
-    notify_many(member_ids, "COMMUNITY_POST", g.current_user.id, post_id=post.id)
+    ntype = "ANNOUNCEMENT" if post.label == "ANNOUNCEMENT" else "COMMUNITY_POST"
+    notify_many(member_ids, ntype, g.current_user.id, post_id=post.id)
 
     return jsonify({"message": "Post creado", "post": post.to_dict()}), 201
 
 
-# update post
+# update post — autor, o moderador (con aviso al autor)
 @posts_bp.route("/posts/<int:post_id>", methods=["PUT"])
 @require_auth
 def update_post(post_id):
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
     if not post:
         return err("NOT_FOUND", "Post no encontrado", 404)
-    if (resp := forbid_unless_owner(post.author_id)):
+    if (resp := forbid_unless_owner_or_moderator(post.author_id)):
         return resp
 
     data = request.get_json() or {}
@@ -146,6 +148,12 @@ def update_post(post_id):
         post.status = data["status"]
 
     db.session.commit()
+
+    # Si edita un moderador que no es el autor, se avisa al autor (anónimo).
+    if post.author_id and g.current_user.id != post.author_id:
+        notify(post.author_id, "CONTENT_EDITED", post_id=post.id,
+               message="Un moderador editó tu publicación por incumplir las normas.")
+
     return jsonify({"message": "Post actualizado", "post": _enrich(post)})
 
 

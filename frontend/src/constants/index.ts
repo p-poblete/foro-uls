@@ -38,7 +38,13 @@ export const NOTIFICATION_LABELS: Record<NotificationType, string> = {
   LIKE: "Le dio like a tu publicación",
   DISLIKE: "Le dio dislike a tu publicación",
   COMMENT: "Comentó en tu publicación",
+  REPLY: "Respondió a tu comentario",
   COMMUNITY_POST: "Nueva publicación en tu comunidad",
+  ANNOUNCEMENT: "Nuevo anuncio en tu comunidad",
+  REPORT_RECEIVED: "Tu contenido fue reportado",
+  REPORT_RESOLVED: "Tu reporte fue revisado",
+  CONTENT_REMOVED: "Un moderador eliminó tu contenido",
+  CONTENT_EDITED: "Un moderador editó tu contenido",
 };
 
 export const REPORT_REASONS = [

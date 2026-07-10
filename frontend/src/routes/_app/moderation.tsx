@@ -10,7 +10,7 @@ import { requireAuth, isModerator, useAuth } from "@/lib/auth";
 import { initials, timeAgo } from "@/lib/format";
 import {
   Shield, Users, FileWarning, Check, X, ShieldOff, Search,
-  Pencil, UserMinus, PlayCircle, PauseCircle, Archive, ExternalLink,
+  Pencil, UserMinus, PlayCircle, PauseCircle, Archive, ExternalLink, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -77,10 +77,22 @@ function ModerationPage() {
     await queryClient.invalidateQueries({ queryKey: [key] });
   }
 
-  async function resolve(id: string, status: "REVIEWED" | "DISMISSED") {
+  // Resolver un reporte. El motivo (note) viaja en las notificaciones que el
+  // backend manda al reportante y al autor del contenido.
+  async function resolve(
+    id: string,
+    status: "REVIEWED" | "DISMISSED",
+    opts: { action?: "remove"; askNote: string },
+  ) {
+    const note = prompt(opts.askNote) ?? undefined;
+    if (note === undefined && opts.action === "remove") return; // banear exige confirmar el prompt
     try {
-      await resolveReport(id, status);
-      toast.success(status === "REVIEWED" ? "Marcado como revisado" : "Reporte descartado");
+      await resolveReport(id, status, { action: opts.action, note });
+      toast.success(
+        opts.action === "remove" ? "Contenido eliminado y usuarios notificados"
+        : status === "REVIEWED" ? "Reporte resuelto: el contenido se mantiene"
+        : "Reporte descartado",
+      );
       await refresh("reports");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "No se pudo actualizar el reporte");
@@ -167,17 +179,33 @@ function ModerationPage() {
                           </Link>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
-                          Motivo: {reasonLabel} · {timeAgo(r.created_at)}
+                          Motivo: {reasonLabel}
+                          {r.reporter_username && <> · Reportado por <span className="font-medium">@{r.reporter_username}</span></>}
+                          {" "}· {timeAgo(r.created_at)}
                         </p>
                         {r.detail && <p className="text-sm mt-2 text-foreground/80">{r.detail}</p>}
+                        {r.status !== "PENDING" && (
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Resolución: {r.action === "remove" ? "contenido eliminado" : "contenido mantenido"}
+                            {r.note && <> · Motivo del moderador: {r.note}</>}
+                          </p>
+                        )}
                       </div>
                       {r.status === "PENDING" && (
-                        <div className="flex gap-1">
-                          <Button size="sm" variant="outline" onClick={() => resolve(r._id, "DISMISSED")}>
-                            <X className="h-3.5 w-3.5 mr-1" /> Descartar
+                        <div className="flex gap-1 flex-wrap justify-end">
+                          {(r.target_type === "publication" || r.target_type === "comment") && (
+                            <Button size="sm" variant="destructive"
+                              onClick={() => resolve(r._id, "REVIEWED", { action: "remove", askNote: "Motivo del baneo (se notificará al autor y al reportante):" })}>
+                              <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar contenido
+                            </Button>
+                          )}
+                          <Button size="sm"
+                            onClick={() => resolve(r._id, "REVIEWED", { askNote: "Motivo para mantener el contenido (se notificará a los involucrados):" })}>
+                            <Check className="h-3.5 w-3.5 mr-1" /> Mantener
                           </Button>
-                          <Button size="sm" onClick={() => resolve(r._id, "REVIEWED")}>
-                            <Check className="h-3.5 w-3.5 mr-1" /> Resolver
+                          <Button size="sm" variant="outline"
+                            onClick={() => resolve(r._id, "DISMISSED", { askNote: "Motivo del descarte (opcional):" })}>
+                            <X className="h-3.5 w-3.5 mr-1" /> Descartar
                           </Button>
                         </div>
                       )}

@@ -195,14 +195,26 @@
           }
         },
         {
-          "name": "Resolver reporte",
+          "name": "Resolver reporte (mantener contenido)",
           "request": {
             "method": "PATCH",
             "header": [
               { "key": "Authorization", "value": "Bearer {{token}}" },
               { "key": "Content-Type", "value": "application/json" }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"status\": \"REVIEWED\"\n}" },
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"REVIEWED\",\n  \"note\": \"No infringe las normas de la comunidad\"\n}" },
+            "url": { "raw": "{{base_url}}/api/reports/REPLACE_ID", "host": ["{{base_url}}"], "path": ["api", "reports", "REPLACE_ID"] }
+          }
+        },
+        {
+          "name": "Banear contenido reportado (action=remove)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"REVIEWED\",\n  \"action\": \"remove\",\n  \"note\": \"Spam reiterado\"\n}" },
             "url": { "raw": "{{base_url}}/api/reports/REPLACE_ID", "host": ["{{base_url}}"], "path": ["api", "reports", "REPLACE_ID"] }
           }
         }

@@ -2,7 +2,9 @@ export type Gender = "MALE" | "FEMALE" | "NON_BINARY";
 export type PrivacyLevel = "PUBLIC" | "PRIVATE" | "RESTRICTED";
 export type PublicationLabel = "HELP" | "ANNOUNCEMENT" | "DISCUSSION" | "CASE";
 export type ReactionType = "LIKE" | "DISLIKE";
-export type NotificationType = "LIKE" | "DISLIKE" | "COMMENT" | "COMMUNITY_POST";
+export type NotificationType =
+  | "LIKE" | "DISLIKE" | "COMMENT" | "REPLY" | "COMMUNITY_POST" | "ANNOUNCEMENT"
+  | "REPORT_RECEIVED" | "REPORT_RESOLVED" | "CONTENT_REMOVED" | "CONTENT_EDITED";
 
 export interface Career {
   id: string;
@@ -57,6 +59,12 @@ export interface Report {
   detail: string;
   status: "PENDING" | "REVIEWED" | "DISMISSED";
   reporter_id: string;
+  /** Visible solo para moderadores (el autor nunca ve quién reportó). */
+  reporter_username?: string | null;
+  /** "remove" si la resolución baneó el contenido. */
+  action?: string | null;
+  /** Motivo del moderador al resolver. */
+  note?: string;
   created_at: string;
 }
 
@@ -107,7 +115,8 @@ export interface Notification {
   _id: string;
   user_id: string;
   type: NotificationType;
-  trigger_user_id: string;
+  /** null = notificación anónima/de sistema (reportes, moderación). */
+  trigger_user_id: string | null;
   publication_id: string | null;
   comment_id: string | null;
   message: string;

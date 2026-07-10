@@ -122,16 +122,21 @@ def create_comment(post_id):
     comment["created_at"] = now.isoformat()
     comment["updated_at"] = now.isoformat()
 
-    # Notifica al autor del post (best-effort).
+    # Notificaciones (best-effort): respuesta → autor del comentario padre;
+    # el autor del post recibe COMMENT salvo que ya sea el padre notificado.
     post = Post.query.filter_by(id=post_id, deleted_at=None).first()
-    if post and post.author_id:
+    parent_author = parent.get("author_id") if data.get("parent_id") else None
+    if parent_author:
+        notify(parent_author, "REPLY", g.current_user.id,
+               post_id=post_id, comment_id=comment["_id"])
+    if post and post.author_id and post.author_id != parent_author:
         notify(post.author_id, "COMMENT", g.current_user.id,
                post_id=post_id, comment_id=comment["_id"])
 
     return jsonify({"message": "Comentario creado", "comment": comment}), 201
 
 
-# update comment
+# update comment — autor, o moderador (con aviso al autor)
 @comments_bp.route("/comments/<string:comment_id>", methods=["PUT"])
 @require_auth
 def update_comment(comment_id):
@@ -147,7 +152,7 @@ def update_comment(comment_id):
     comment = mongo.comments.find_one({"_id": oid, "deleted_at": None})
     if not comment:
         return err("NOT_FOUND", "Comentario no encontrado", 404)
-    if (resp := forbid_unless_owner(comment.get("author_id"))):
+    if (resp := forbid_unless_owner_or_moderator(comment.get("author_id"))):
         return resp
 
     mongo.comments.update_one(
@@ -155,6 +160,13 @@ def update_comment(comment_id):
         {"$set": {"content": data["content"], "updated_at": datetime.now(timezone.utc)}}
     )
     comment["content"] = data["content"]
+
+    # Si edita un moderador que no es el autor, se avisa al autor (anónimo).
+    if g.current_user.id != comment.get("author_id"):
+        notify(comment.get("author_id"), "CONTENT_EDITED",
+               post_id=comment.get("post_id"), comment_id=comment_id,
+               message="Un moderador editó tu comentario por incumplir las normas.")
+
     return jsonify({"message": "Comentario actualizado", "comment": _serialize(comment)})
 
 

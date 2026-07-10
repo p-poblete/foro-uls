@@ -7,7 +7,7 @@ import { initials, timeAgo } from "@/lib/format";
 import { NOTIFICATION_LABELS, STORAGE_KEYS } from "@/constants";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Check, ShieldAlert } from "lucide-react";
 import { requireAuth, useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/notifications")({
@@ -34,11 +34,12 @@ function NotificationsPage() {
     enabled: !!user,
   });
   // El backend guarda trigger_user_id; el perfil se resuelve aquí para el avatar.
+  // trigger_user_id null = notificación anónima/de sistema (reportes, moderación).
   const { data: users } = useQuery({ queryKey: ["users"], queryFn: fetchUsers });
   const byId = new Map((users ?? []).map((u) => [u.id, u]));
   const notifs = (notifications ?? []).map((n) => ({
     ...n,
-    trigger_user: n.trigger_user ?? byId.get(n.trigger_user_id),
+    trigger_user: n.trigger_user ?? (n.trigger_user_id ? byId.get(n.trigger_user_id) : undefined),
   }));
   const [readSet, setReadSet] = useState<Set<string>>(new Set());
 
@@ -81,14 +82,25 @@ function NotificationsPage() {
               onClick={() => markOne(n._id)}
               className={`cursor-pointer rounded-xl border p-4 flex items-start gap-3 transition-colors ${isRead ? "border-border bg-card" : "border-primary/30 bg-primary/5"}`}
             >
-              <Avatar className="h-10 w-10">
-                <AvatarImage src={n.trigger_user?.profile_image ?? undefined} />
-                <AvatarFallback>{initials(n.trigger_user?.username ?? "?")}</AvatarFallback>
-              </Avatar>
+              {n.trigger_user_id ? (
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={n.trigger_user?.profile_image ?? undefined} />
+                  <AvatarFallback>{initials(n.trigger_user?.username ?? "?")}</AvatarFallback>
+                </Avatar>
+              ) : (
+                // Notificación anónima/de sistema (reportes y moderación): sin autor visible.
+                <span className="h-10 w-10 rounded-full bg-secondary grid place-items-center">
+                  <ShieldAlert className="h-5 w-5 text-secondary-foreground" />
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm">
-                  <span className="font-semibold">@{n.trigger_user?.username}</span>{" "}
-                  <span className="text-muted-foreground">{NOTIFICATION_LABELS[n.type].toLowerCase()}</span>
+                  {n.trigger_user_id && (
+                    <span className="font-semibold">@{n.trigger_user?.username ?? "usuario"}{" "}</span>
+                  )}
+                  <span className={n.trigger_user_id ? "text-muted-foreground" : ""}>
+                    {n.message || NOTIFICATION_LABELS[n.type]}
+                  </span>
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(n.created_at)}</p>
                 {n.publication_id && (

@@ -368,8 +368,15 @@ export async function fetchReports(status?: string): Promise<Report[]> {
   return res.reports;
 }
 
-export async function resolveReport(id: string, status: "REVIEWED" | "DISMISSED"): Promise<void> {
-  await apiFetch(`/reports/${id}`, { method: "PATCH", body: JSON.stringify({ status }) });
+export async function resolveReport(
+  id: string,
+  status: "REVIEWED" | "DISMISSED",
+  opts: { action?: "remove"; note?: string } = {},
+): Promise<void> {
+  await apiFetch(`/reports/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, ...opts }),
+  });
 }
 
 export async function markNotificationsRead(userId: string): Promise<void> {

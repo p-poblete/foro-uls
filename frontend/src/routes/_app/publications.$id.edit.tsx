@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPost, updatePost } from "@/lib/api";
 import { PublicationComposer } from "@/components/publications/PublicationComposer";
-import { requireAuth, useAuth } from "@/lib/auth";
+import { requireAuth, useAuth, isModerator } from "@/lib/auth";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/publications/$id/edit")({
@@ -21,7 +21,8 @@ function EditPage() {
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !pub) return <p className="text-center py-10">Publicación no encontrada.</p>;
 
-  if (user && user.id !== pub.author_id) {
+  // El backend permite editar al autor o a un moderador (avisa al autor si edita un mod).
+  if (user && user.id !== pub.author_id && !isModerator()) {
     return <p className="text-sm text-destructive">No tienes permiso para editar esta publicación.</p>;
   }
 
