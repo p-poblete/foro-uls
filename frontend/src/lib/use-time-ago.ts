@@ -14,7 +14,12 @@ function refreshMs(iso: string): number {
 /** `timeAgo(iso)` que se mantiene actualizado mientras el componente está
  * montado. `timeAgo` por sí solo es una función pura: calculada una vez en el
  * render, nunca vuelve a evaluarse aunque pase el tiempo (por eso un
- * comentario se quedaba en "hace unos segundos" para siempre). */
+ * comentario se quedaba en "hace unos segundos" para siempre).
+ *
+ * Además recalcula al instante cuando la pestaña vuelve a estar visible: los
+ * navegadores limitan (throttle) setTimeout/setInterval en pestañas en
+ * segundo plano —a veces a 1 tick por minuto—, así que sin esto el texto
+ * puede quedarse "atrasado" varios minutos hasta el siguiente tick real. */
 export function useTimeAgo(iso: string): string {
   const [label, setLabel] = useState(() => timeAgo(iso));
 
@@ -26,7 +31,16 @@ export function useTimeAgo(iso: string): string {
       id = setTimeout(tick, refreshMs(iso));
     };
     id = setTimeout(tick, refreshMs(iso));
-    return () => clearTimeout(id);
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setLabel(timeAgo(iso));
+    };
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      clearTimeout(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [iso]);
 
   return label;
@@ -41,6 +55,14 @@ export function useClockTick(intervalMs = 30_000) {
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), intervalMs);
-    return () => clearInterval(id);
+    // Mismo motivo que en useTimeAgo: fuerza un refresco al volver a la pestaña.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") setTick((t) => t + 1);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [intervalMs]);
 }
