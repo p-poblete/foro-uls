@@ -1,0 +1,112 @@
+digraph er {
+  rankdir=LR;
+  fontname="Segoe UI";
+  node [fontname="Consolas", fontsize=10, shape=plain];
+  edge [fontname="Segoe UI", fontsize=9, color="#1F2933"];
+
+  subgraph cluster_pg {
+    label="PostgreSQL (relacional) — integridad referencial"; fontsize=12;
+    fontname="Segoe UI"; color="#0E7C6B"; style="rounded";
+
+    users [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>users</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">username · email (UQ)</TD></TR>
+        <TR><TD ALIGN="LEFT">google_id = sub Auth0 (UQ)</TD></TR>
+        <TR><TD ALIGN="LEFT">display_name · avatar · bio</TD></TR>
+        <TR><TD ALIGN="LEFT">FK career_id</TD></TR>
+        <TR><TD ALIGN="LEFT">status · deleted_at</TD></TR>
+      </TABLE>>];
+
+    careers [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>careers</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">code (UQ) · name</TD></TR>
+      </TABLE>>];
+
+    communities [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>communities</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">name (UQ) · slug (UQ)</TD></TR>
+        <TR><TD ALIGN="LEFT">FK owner_id</TD></TR>
+        <TR><TD ALIGN="LEFT">visibility: public|restricted|private</TD></TR>
+        <TR><TD ALIGN="LEFT">status: active|suspended|archived</TD></TR>
+      </TABLE>>];
+
+    members [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>community_members</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">FK community_id · FK user_id</TD></TR>
+        <TR><TD ALIGN="LEFT">UQ (community_id, user_id)</TD></TR>
+        <TR><TD ALIGN="LEFT">role: member|owner</TD></TR>
+        <TR><TD ALIGN="LEFT">status: active|pending</TD></TR>
+      </TABLE>>];
+
+    posts [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>posts</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">FK community_id · FK author_id</TD></TR>
+        <TR><TD ALIGN="LEFT">title · content · image_url</TD></TR>
+        <TR><TD ALIGN="LEFT">label: HELP|ANNOUNCEMENT|...</TD></TR>
+        <TR><TD ALIGN="LEFT">vote_score · status · deleted_at</TD></TR>
+      </TABLE>>];
+
+    votes [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#0E7C6B"><FONT COLOR="white"><B>post_votes</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">PK id</TD></TR>
+        <TR><TD ALIGN="LEFT">FK post_id · FK user_id</TD></TR>
+        <TR><TD ALIGN="LEFT">UQ (post_id, user_id)</TD></TR>
+        <TR><TD ALIGN="LEFT">vote_type: 1 | -1</TD></TR>
+      </TABLE>>];
+  }
+
+  subgraph cluster_mongo {
+    label="MongoDB (NoSQL) — documentos flexibles"; fontsize=12;
+    fontname="Segoe UI"; color="#5B21B6"; style="rounded";
+
+    comments [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#5B21B6"><FONT COLOR="white"><B>comments</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">_id: ObjectId</TD></TR>
+        <TR><TD ALIGN="LEFT">post_id · author_id (ref lógica)</TD></TR>
+        <TR><TD ALIGN="LEFT">parent_id: ObjectId|null · depth</TD></TR>
+        <TR><TD ALIGN="LEFT">content · vote_score · status</TD></TR>
+      </TABLE>>];
+
+    notifs [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#5B21B6"><FONT COLOR="white"><B>notifications</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">user_id · trigger_user_id|null</TD></TR>
+        <TR><TD ALIGN="LEFT">type: LIKE..CONTENT_REMOVED</TD></TR>
+        <TR><TD ALIGN="LEFT">message · is_read</TD></TR>
+      </TABLE>>];
+
+    reports [label=<
+      <TABLE BORDER="0" CELLBORDER="1" CELLSPACING="0" CELLPADDING="3">
+        <TR><TD BGCOLOR="#5B21B6"><FONT COLOR="white"><B>reports</B></FONT></TD></TR>
+        <TR><TD ALIGN="LEFT">target_type · target_id</TD></TR>
+        <TR><TD ALIGN="LEFT">reason · detail · status</TD></TR>
+        <TR><TD ALIGN="LEFT">reporter_id · action · note</TD></TR>
+      </TABLE>>];
+  }
+
+  users -> careers [label="N:1"];
+  communities -> users [label="owner N:1"];
+  members -> communities [label="N:1"];
+  members -> users [label="N:1"];
+  posts -> communities [label="N:1"];
+  posts -> users [label="autor N:1"];
+  votes -> posts [label="N:1"];
+  votes -> users [label="N:1"];
+
+  comments -> posts [label="ref lógica", style=dashed, color="#5B21B6"];
+  comments -> comments [label="parent_id\n(árbol)", style=dashed, color="#5B21B6"];
+  notifs -> users [label="ref lógica", style=dashed, color="#5B21B6"];
+  reports -> users [label="reporter", style=dashed, color="#5B21B6"];
+}

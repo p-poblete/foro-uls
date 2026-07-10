@@ -1,0 +1,45 @@
+digraph arquitectura {
+  rankdir=LR;
+  fontname="Segoe UI";
+  node [fontname="Segoe UI", fontsize=11, shape=box, style="rounded,filled", fillcolor="#F1F6F5", color="#5B6B73"];
+  edge [fontname="Segoe UI", fontsize=9, color="#1F2933"];
+  compound=true;
+
+  navegador [label="Navegador\n(usuario ULS)", fillcolor="#FFFFFF", penwidth=1.4];
+
+  subgraph cluster_cf {
+    label="Cloudflare"; fontsize=12; color="#0E7C6B"; style="rounded";
+    frontend [label="Frontend SSR\nTanStack Start (React 19)\nCloudflare Worker\nforo-uls.readuls.workers.dev"];
+    r2 [label="R2 (S3-compatible)\nImágenes públicas\npub-*.r2.dev", shape=cylinder, fillcolor="#FFFFFF"];
+  }
+
+  subgraph cluster_gcp {
+    label="Google Cloud Run"; fontsize=12; color="#0E7C6B"; style="rounded";
+    api [label="Backend API REST\nFlask + gunicorn\nreaduls-*.run.app"];
+  }
+
+  subgraph cluster_auth {
+    label="Auth0 (Authorization Server)"; fontsize=12; color="#B45309"; style="rounded";
+    auth0 [label="Universal Login + Consent\nRBAC (rol moderator)\nAction: solo @ulasalle.edu.pe", fillcolor="#FEF3E2"];
+    google [label="Google\n(conexión social)", fillcolor="#FFFFFF"];
+  }
+
+  subgraph cluster_datos {
+    label="Datos"; fontsize=12; color="#0E7C6B"; style="rounded";
+    pg [label="PostgreSQL (Neon)\nusers · communities\nmembers · posts · votes", shape=cylinder, fillcolor="#FFFFFF"];
+    mongo [label="MongoDB (Atlas)\ncomments · notifications\nreports", shape=cylinder, fillcolor="#FFFFFF"];
+  }
+
+  navegador -> frontend [label="HTTPS (HTML SSR)"];
+  navegador -> api [label="fetch /api/*\nAuthorization: Bearer JWT"];
+  navegador -> r2 [label="imágenes", style=dashed];
+
+  navegador -> auth0 [label="1. redirect /authorize\n(login + consent)", color="#B45309", fontcolor="#B45309"];
+  auth0 -> google [label="OIDC", color="#B45309", fontcolor="#B45309"];
+  auth0 -> api [label="2. callback ?code=...", color="#B45309", fontcolor="#B45309"];
+  api -> auth0 [label="3. canje code x token\n(server-to-server)\n4. JWKS p/ validar JWT", color="#B45309", fontcolor="#B45309"];
+
+  api -> pg [label="SQLAlchemy"];
+  api -> mongo [label="PyMongo"];
+  api -> r2 [label="boto3 (subidas)"];
+}
