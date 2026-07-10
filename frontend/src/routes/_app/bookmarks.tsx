@@ -4,6 +4,7 @@ import { fetchFeed } from "@/lib/api";
 import { useBookmarks } from "@/lib/bookmarks";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { PublicationList } from "@/components/publications/PublicationList";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 import { Bookmark } from "lucide-react";
 import { requireAuth } from "@/lib/auth";
 
@@ -15,13 +16,15 @@ export const Route = createFileRoute("/_app/bookmarks")({
 
 function BookmarksPage() {
   const { ids } = useBookmarks();
-  const { data } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
+  const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
   const items = (data ?? []).filter((p) => ids.includes(p.id));
 
   return (
     <div className="max-w-2xl mx-auto w-full">
       <FeedHeader title="Guardados" subtitle="Publicaciones que marcaste para volver más tarde" />
-      {items.length === 0 ? (
+      {isLoading ? (
+        <PublicationListSkeleton count={2} />
+      ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
           <Bookmark className="mx-auto h-8 w-8 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">Aún no tienes publicaciones guardadas.</p>

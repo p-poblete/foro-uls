@@ -2,7 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { ArrowDown, ArrowUp, Bookmark, Flag, MessageCircle, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
 import type { Publication } from "@/types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { compactNumber, initials, timeAgo } from "@/lib/format";
+import { compactNumber, initials } from "@/lib/format";
+import { useTimeAgo } from "@/lib/use-time-ago";
 import { LabelBadge } from "@/components/publications/LabelBadge";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function PublicationCard({ pub, onDelete }: { pub: Publication; onDelete?
   const [reportOpen, setReportOpen] = useState(false);
   const saved = bookmarks.has(pub.id);
   const isOwner = user?.id === pub.author_id;
+  const postedAgo = useTimeAgo(pub.created_at);
 
   // Sincroniza con el servidor cuando el feed se refresca (trae user_reaction real).
   useEffect(() => {
@@ -100,7 +102,7 @@ export function PublicationCard({ pub, onDelete }: { pub: Publication; onDelete?
               {pub.author?.username}
             </Link>
             <span className="mx-1">·</span>
-            {timeAgo(pub.created_at)}
+            {postedAgo}
           </div>
         </div>
         <DropdownMenu>

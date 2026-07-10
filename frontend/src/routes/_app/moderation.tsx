@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { REPORT_REASONS } from "@/constants";
 import { requireAuth, isModerator, useAuth } from "@/lib/auth";
 import { initials, timeAgo } from "@/lib/format";
+import { useClockTick } from "@/lib/use-time-ago";
 import {
   Shield, Users, FileWarning, Check, X, ShieldOff, Search,
   Pencil, UserMinus, PlayCircle, PauseCircle, Archive, ExternalLink, Trash2,
@@ -33,6 +34,9 @@ function ModerationPage() {
   // El backend exige el rol `moderator` (Auth0 RBAC); el gate de UI solo evita un 403.
   const [moderator, setModerator] = useState(false);
   useEffect(() => setModerator(isModerator()), []);
+  // Refresca los "hace X" de reportes y usuarios cada 30s (varios timeAgo()
+  // inline dentro de .map(), sin un subcomponente propio por fila).
+  useClockTick();
 
   const { data: reports, isError } = useQuery({
     queryKey: ["reports"], queryFn: () => fetchReports(), enabled: moderator,

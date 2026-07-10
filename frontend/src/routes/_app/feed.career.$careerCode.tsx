@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeed, fetchCareers } from "@/lib/api";
 import { PublicationList } from "@/components/publications/PublicationList";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 
 export const Route = createFileRoute("/_app/feed/career/$careerCode")({
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_app/feed/career/$careerCode")({
 function CareerFeedPage() {
   const { careerCode } = Route.useParams();
   const { data: careers } = useQuery({ queryKey: ["careers"], queryFn: fetchCareers });
-  const { data: feed } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
+  const { data: feed, isLoading } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
   const career = (careers ?? []).find((c) => c.code === careerCode);
 
   if (careers && !career) {
@@ -23,7 +24,7 @@ function CareerFeedPage() {
   return (
     <div className="max-w-2xl mx-auto w-full">
       <FeedHeader title={career?.name ?? "Carrera"} subtitle="Publicaciones filtradas por carrera" />
-      <PublicationList items={items} />
+      {isLoading ? <PublicationListSkeleton /> : <PublicationList items={items} />}
     </div>
   );
 }

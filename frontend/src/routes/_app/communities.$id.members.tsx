@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchCommunity, fetchMembers, approveMember, removeMember } from "@/lib/api";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initials, timeAgo } from "@/lib/format";
+import { initials } from "@/lib/format";
+import { useTimeAgo } from "@/lib/use-time-ago";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMemo, useState } from "react";
@@ -128,6 +129,7 @@ function CommunityMembersPage() {
 }
 
 function MemberRow({ m, children }: { m: CommunityMembership; children?: React.ReactNode }) {
+  const joinedAgo = useTimeAgo(m.joined_at);
   return (
     <li className="rounded-xl border border-border bg-card p-3 flex items-center gap-3">
       <Avatar className="h-10 w-10">
@@ -145,7 +147,7 @@ function MemberRow({ m, children }: { m: CommunityMembership; children?: React.R
             </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">Se unió {timeAgo(m.joined_at)}</p>
+        <p className="text-xs text-muted-foreground">Se unió {joinedAgo}</p>
       </div>
       <div className="flex gap-1">{children}</div>
     </li>

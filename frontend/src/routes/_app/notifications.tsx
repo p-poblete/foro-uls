@@ -4,6 +4,7 @@ import { fetchNotifications, fetchUsers, markNotificationsRead } from "@/lib/api
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, timeAgo } from "@/lib/format";
+import { useClockTick } from "@/lib/use-time-ago";
 import { NOTIFICATION_LABELS, STORAGE_KEYS } from "@/constants";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,8 @@ function writeIds(ids: string[]) {
 function NotificationsPage() {
   const user = useAuth();
   const queryClient = useQueryClient();
+  // Refresca los "hace X" de la lista cada 30s (timeAgo() inline en .map()).
+  useClockTick();
   const { data: notifications } = useQuery({
     queryKey: ["notifications", user?.id],
     queryFn: () => fetchNotifications(user!.id),

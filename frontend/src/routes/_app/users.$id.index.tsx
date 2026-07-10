@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchUser, fetchFeed, fetchCommunities, fetchCareers, fetchUserComments } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, timeAgo } from "@/lib/format";
+import { useClockTick } from "@/lib/use-time-ago";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PublicationList } from "@/components/publications/PublicationList";
 import { Mail } from "lucide-react";
@@ -25,6 +26,8 @@ function UserProfilePage() {
   const { data: communities } = useQuery({ queryKey: ["communities"], queryFn: fetchCommunities });
   const { data: careers } = useQuery({ queryKey: ["careers"], queryFn: fetchCareers });
   const { data: comments } = useQuery({ queryKey: ["user-comments", id], queryFn: () => fetchUserComments(id) });
+  // Refresca los "hace X" de esta página cada 30s (timeAgo() plano, sin subcomponente por fila).
+  useClockTick();
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !user) return <p className="text-center py-10">Usuario no encontrado.</p>;

@@ -5,6 +5,7 @@ import { fetchFeedPage } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { FilterableFeed } from "@/components/feed/FilterableFeed";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -53,7 +54,7 @@ function HomePage() {
     <div className="max-w-2xl mx-auto w-full">
       <FeedHeader title="Inicio" subtitle="Publicaciones de todas las comunidades" />
       {isLoading ? (
-        <p className="text-center text-muted-foreground py-10">Cargando publicaciones…</p>
+        <PublicationListSkeleton />
       ) : isError ? (
         <p className="text-center text-destructive py-10">No se pudo cargar el feed.</p>
       ) : (

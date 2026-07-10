@@ -3,10 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchCommunity, fetchCommunityPosts, fetchUser, joinCommunity, leaveCommunity } from "@/lib/api";
 import { ApiError } from "@/lib/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initials, compactNumber, timeAgo } from "@/lib/format";
+import { initials, compactNumber } from "@/lib/format";
+import { useTimeAgo } from "@/lib/use-time-ago";
 import { PRIVACY_DESCRIPTIONS, PRIVACY_LABELS } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { PublicationList } from "@/components/publications/PublicationList";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 import { useAuth } from "@/lib/auth";
 import { Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -23,7 +25,7 @@ function CommunityPage() {
     queryKey: ["community", id],
     queryFn: () => fetchCommunity(id),
   });
-  const { data: pubs, error: pubsError } = useQuery({
+  const { data: pubs, isLoading: pubsLoading, error: pubsError } = useQuery({
     queryKey: ["community-posts", id, user?.id],
     queryFn: () => fetchCommunityPosts(id, user?.id),
     retry: (count, e) => !(e instanceof ApiError && e.status === 403) && count < 2,
@@ -36,6 +38,8 @@ function CommunityPage() {
     enabled: !!community?.creator_id,
   });
   const queryClient = useQueryClient();
+  // Antes de los returns tempranos (regla de hooks): usa "" si aún no llega `community`.
+  const createdAgo = useTimeAgo(community?.created_at ?? "");
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !community) return <p className="text-center py-10">Comunidad no encontrada.</p>;
@@ -89,7 +93,7 @@ function CommunityPage() {
               </span>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {compactNumber(community.member_count)} miembros · Creada {timeAgo(community.created_at)}
+              {compactNumber(community.member_count)} miembros · Creada {createdAgo}
             </p>
             <p className="text-sm mt-2">{community.description}</p>
             <p className="text-xs text-muted-foreground mt-1">{PRIVACY_DESCRIPTIONS[community.privacy_level]}</p>
@@ -116,7 +120,9 @@ function CommunityPage() {
       <div className="mt-6 grid lg:grid-cols-[1fr_260px] gap-6">
         <div>
           <h2 className="font-display text-lg font-semibold mb-3">Publicaciones</h2>
-          {isPrivateLocked ? (
+          {pubsLoading ? (
+            <PublicationListSkeleton count={3} />
+          ) : isPrivateLocked ? (
             <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
               <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
               <p className="mt-3 text-sm font-medium">Comunidad privada</p>

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { fetchFeed } from "@/lib/api";
 import { PublicationList } from "@/components/publications/PublicationList";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 
 export const Route = createFileRoute("/_app/feed/announcements")({
@@ -20,7 +21,7 @@ function AnnouncementsPage() {
   return (
     <div className="max-w-2xl mx-auto w-full">
       <FeedHeader title="Anuncios ULS" subtitle="Comunicados institucionales oficiales" />
-      {isLoading ? <p className="text-muted-foreground py-6">Cargando…</p> : <PublicationList items={items} />}
+      {isLoading ? <PublicationListSkeleton count={3} /> : <PublicationList items={items} />}
     </div>
   );
 }

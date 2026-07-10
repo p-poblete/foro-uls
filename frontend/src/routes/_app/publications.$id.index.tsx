@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPost, fetchComments, createComment, votePost, voteComment, updateComment as apiUpdateComment, deleteComment as apiDeleteComment } from "@/lib/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { initials, timeAgo, compactNumber } from "@/lib/format";
+import { initials, compactNumber } from "@/lib/format";
+import { useTimeAgo } from "@/lib/use-time-ago";
 import { LabelBadge } from "@/components/publications/LabelBadge";
 import { Button } from "@/components/ui/button";
 import { ArrowDown, ArrowUp, Flag, MessageCircle, MoreHorizontal, Pencil, Share2, Trash2 } from "lucide-react";
@@ -48,6 +49,8 @@ function PublicationPage() {
 
   useEffect(() => { if (commentsData) setComments(commentsData); }, [commentsData]);
   useEffect(() => { if (pub) { setScore(pub.like_count - pub.dislike_count); setReaction(pub.user_reaction ?? null); } }, [pub]);
+  // Antes de los returns tempranos (regla de hooks): usa "" si aún no llega `pub`.
+  const postedAgo = useTimeAgo(pub?.created_at ?? "");
 
   if (isLoading) return <p className="text-center text-muted-foreground py-10">Cargando…</p>;
   if (isError || !pub) return <p className="text-center py-10">Publicación no encontrada.</p>;
@@ -141,7 +144,7 @@ function PublicationPage() {
             </Link>
             <div className="text-xs text-muted-foreground">
               <Link to="/users/$id" params={{ id: pub.author_id }} className="hover:underline">{pub.author?.username}</Link>
-              <span className="mx-1">·</span>{timeAgo(pub.created_at)}
+              <span className="mx-1">·</span>{postedAgo}
             </div>
           </div>
           {user?.id === pub.author_id && (
@@ -259,6 +262,7 @@ function CommentNode({ c, depth, currentUserId, onReply, onEdit, onDelete }: Nod
   const [likes, setLikes] = useState(c.like_count);
   const [dislikes, setDislikes] = useState(c.dislike_count);
   const isOwner = currentUserId === c.author_id;
+  const commentedAgo = useTimeAgo(c.created_at);
 
   function react(type: "LIKE" | "DISLIKE") {
     if (!currentUserId) return toast.error("Inicia sesión para reaccionar.");
@@ -285,7 +289,7 @@ function CommentNode({ c, depth, currentUserId, onReply, onEdit, onDelete }: Nod
           <Link to="/users/$id" params={{ id: c.author_id }} className="font-semibold hover:underline">
             {c.author?.username}
           </Link>
-          <span className="text-muted-foreground">· {timeAgo(c.created_at)}</span>
+          <span className="text-muted-foreground">· {commentedAgo}</span>
           <div className="ml-auto">
             <DropdownMenu>
               <DropdownMenuTrigger className="rounded p-1 hover:bg-accent" aria-label="Opciones">

@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchFeed } from "@/lib/api";
 import { FeedHeader } from "@/components/feed/FeedHeader";
 import { FilterableFeed } from "@/components/feed/FilterableFeed";
+import { PublicationListSkeleton } from "@/components/publications/PublicationCardSkeleton";
 import { LABEL_LABELS, ALL_LABELS } from "@/constants";
 import type { PublicationLabel } from "@/types";
 
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/_app/feed/label/$label")({
 
 function LabelFeedPage() {
   const { label } = Route.useLoaderData() as { label: PublicationLabel };
-  const { data } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
+  const { data, isLoading } = useQuery({ queryKey: ["feed"], queryFn: () => fetchFeed() });
   const items = (data ?? []).filter((p) => p.label === label);
   return (
     <div className="max-w-2xl mx-auto w-full">
@@ -29,7 +30,7 @@ function LabelFeedPage() {
         title={`Etiqueta: ${LABEL_LABELS[label]}`}
         subtitle={`Publicaciones marcadas como ${LABEL_LABELS[label].toLowerCase()}`}
       />
-      <FilterableFeed items={items} showLabelFilter={false} />
+      {isLoading ? <PublicationListSkeleton /> : <FilterableFeed items={items} showLabelFilter={false} />}
     </div>
   );
 }
