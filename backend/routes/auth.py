@@ -88,6 +88,11 @@ def login():
         "scope":         SCOPE,
         "audience":      AUDIENCE,
         "state":         state,
+        # Solo Google: va directo al login de Google y evita el alta con
+        # email/contraseña de Auth0 (cualquiera podría inventar un correo
+        # @ulasalle.edu.pe sin ser dueño de la cuenta; con Google, la
+        # titularidad del correo institucional está verificada).
+        "connection":    "google-oauth2",
     }
     return redirect(f"{AUTHORIZE_URL}?{urlencode(params)}")
 

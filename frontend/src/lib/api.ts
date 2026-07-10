@@ -130,6 +130,21 @@ export async function fetchFeed(userId?: string): Promise<Publication[]> {
   return res.data.map(mapPost);
 }
 
+/** Página del feed con paginación por cursor (20 en 20). El cursor es el id del
+ * último post recibido; el backend devuelve los siguientes con búsqueda indexada
+ * O(log n), sin escanear las filas saltadas (a diferencia de offset). */
+export async function fetchFeedPage(
+  cursor?: number | null,
+  userId?: string,
+): Promise<{ items: Publication[]; nextCursor: number | null }> {
+  const params = new URLSearchParams({ limit: "20" });
+  if (cursor) params.set("cursor", String(cursor));
+  if (userId) params.set("user_id", String(Number(userId)));
+  const res = await apiFetch<{ data: BackendPost[]; next_cursor: number | null }>(
+    `/posts?${params.toString()}`);
+  return { items: res.data.map(mapPost), nextCursor: res.next_cursor ?? null };
+}
+
 export async function fetchPost(id: string, userId?: string): Promise<Publication> {
   const q = userId ? `?user_id=${Number(userId)}` : "";
   const res = await apiFetch<{ post: BackendPost }>(`/posts/${id}${q}`);

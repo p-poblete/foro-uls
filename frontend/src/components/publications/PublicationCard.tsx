@@ -156,7 +156,8 @@ export function PublicationCard({ pub, onDelete }: { pub: Publication; onDelete?
       {pub.multimedia.length > 0 && (
         <div className="px-5 pt-4">
           <div className="overflow-hidden rounded-lg border border-border bg-muted">
-            <img src={pub.multimedia[0]} alt={pub.title} className="w-full max-h-96 object-cover" />
+            {/* lazy: la imagen solo se descarga cuando la card se acerca al viewport */}
+            <img src={pub.multimedia[0]} alt={pub.title} loading="lazy" decoding="async" className="w-full max-h-96 object-cover" />
           </div>
         </div>
       )}

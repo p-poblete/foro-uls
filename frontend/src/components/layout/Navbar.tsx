@@ -147,11 +147,8 @@ export function Navbar({ onMenuClick }: { onMenuClick?: () => void }) {
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" className="text-primary-foreground hover:bg-white/10 hover:text-primary-foreground">
-                <Link to="/login">Ingresar</Link>
-              </Button>
               <Button asChild className="bg-white text-primary hover:bg-white/90">
-                <Link to="/register">Registrarse</Link>
+                <Link to="/login">Ingresar</Link>
               </Button>
             </>
           )}

@@ -327,7 +327,7 @@ function CommentNode({ c, depth, currentUserId, onReply, onEdit, onDelete }: Nod
           <>
             <p className="text-sm mt-2 whitespace-pre-wrap">{c.content_text}</p>
             {c.image_url && (
-              <img src={c.image_url} alt="" className="mt-2 max-h-72 rounded-lg border object-cover" />
+              <img src={c.image_url} alt="" loading="lazy" decoding="async" className="mt-2 max-h-72 rounded-lg border object-cover" />
             )}
           </>
         )}

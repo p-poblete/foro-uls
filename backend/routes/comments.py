@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, g
 from database import get_mongo
-from models import Post
-from auth_utils import require_auth, forbid_unless_owner, forbid_unless_owner_or_moderator
+from models import Post, Community
+from auth_utils import require_auth, forbid_unless_owner, forbid_unless_owner_or_moderator, can_view_community
 from errors import err
 from notifications import notify
 from bson import ObjectId
@@ -34,6 +34,14 @@ def _parse_oid(value):
 # list root comments of a post
 @comments_bp.route("/posts/<int:post_id>/comments", methods=["GET"])
 def get_comments(post_id):
+    # Privacidad: los comentarios heredan la visibilidad de la comunidad del post
+    # (miembros, dueño o moderador si es privada).
+    post = Post.query.filter_by(id=post_id, deleted_at=None).first()
+    if post:
+        community = Community.query.filter_by(id=post.community_id).first()
+        if not can_view_community(community):
+            return err("FORBIDDEN", "Esta publicación pertenece a una comunidad privada", 403)
+
     mongo = get_mongo()
     parent_id_param = request.args.get("parent_id")
 

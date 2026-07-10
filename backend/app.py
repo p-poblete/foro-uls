@@ -40,6 +40,16 @@ def create_app():
     with app.app_context():
         try:
             db.create_all()
+            # Índices B-Tree para las consultas calientes del feed (create_all no
+            # altera tablas existentes, por eso van como DDL idempotente aparte).
+            from sqlalchemy import text
+            for ddl in (
+                "CREATE INDEX IF NOT EXISTS idx_posts_community_created ON posts (community_id, created_at DESC)",
+                "CREATE INDEX IF NOT EXISTS idx_posts_active ON posts (id DESC) WHERE deleted_at IS NULL AND status = 'active'",
+                "CREATE INDEX IF NOT EXISTS idx_members_user ON community_members (user_id)",
+            ):
+                db.session.execute(text(ddl))
+            db.session.commit()
         except Exception as e:
             app.logger.warning("Postgres no disponible, se omite create_all(): %s", e)
 

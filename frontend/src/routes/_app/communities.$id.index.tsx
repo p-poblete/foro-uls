@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchCommunity, fetchCommunityPosts, fetchUser, joinCommunity, leaveCommunity } from "@/lib/api";
+import { ApiError } from "@/lib/api-client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { initials, compactNumber, timeAgo } from "@/lib/format";
 import { PRIVACY_DESCRIPTIONS, PRIVACY_LABELS } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { PublicationList } from "@/components/publications/PublicationList";
 import { useAuth } from "@/lib/auth";
+import { Lock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/communities/$id/")({
@@ -21,10 +23,13 @@ function CommunityPage() {
     queryKey: ["community", id],
     queryFn: () => fetchCommunity(id),
   });
-  const { data: pubs } = useQuery({
+  const { data: pubs, error: pubsError } = useQuery({
     queryKey: ["community-posts", id, user?.id],
     queryFn: () => fetchCommunityPosts(id, user?.id),
+    retry: (count, e) => !(e instanceof ApiError && e.status === 403) && count < 2,
   });
+  // 403 = comunidad privada y no eres miembro (los moderadores sí pueden ver).
+  const isPrivateLocked = pubsError instanceof ApiError && pubsError.status === 403;
   const { data: creator } = useQuery({
     queryKey: ["user", community?.creator_id],
     queryFn: () => fetchUser(community!.creator_id),
@@ -111,7 +116,17 @@ function CommunityPage() {
       <div className="mt-6 grid lg:grid-cols-[1fr_260px] gap-6">
         <div>
           <h2 className="font-display text-lg font-semibold mb-3">Publicaciones</h2>
-          <PublicationList items={pubs ?? []} />
+          {isPrivateLocked ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <Lock className="h-8 w-8 mx-auto text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium">Comunidad privada</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Su contenido solo es visible para miembros. El acceso es por invitación.
+              </p>
+            </div>
+          ) : (
+            <PublicationList items={pubs ?? []} />
+          )}
         </div>
         <aside className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-4">

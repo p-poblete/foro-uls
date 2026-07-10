@@ -117,6 +117,24 @@ def forbid_unless_owner_or_moderator(owner_id):
     return err("FORBIDDEN", "No autorizado: requiere ser el dueño o moderador", 403)
 
 
+def can_view_community(community):
+    """Privacidad de contenido: en comunidades PRIVADAS solo ven publicaciones y
+    comentarios los miembros activos, el dueño y los moderadores (que supervisan
+    todas las comunidades). Públicas y restringidas son visibles para todos."""
+    if community is None or community.visibility != "private":
+        return True
+    if is_moderator():
+        return True
+    user = current_user()
+    if user is None:
+        return False
+    if community.owner_id == user.id:
+        return True
+    from models import CommunityMember
+    return CommunityMember.query.filter_by(
+        community_id=community.id, user_id=user.id, status="active").first() is not None
+
+
 if __name__ == "__main__":
     # Check mínimo offline del guard de validación (sin red ni app context).
     assert verify_access_token(None) is None
